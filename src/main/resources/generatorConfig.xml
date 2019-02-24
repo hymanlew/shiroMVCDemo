@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE generatorConfiguration
+        PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+        "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+
+<!-- -->
+<!-- 该文件的文件名是固定的，不可随意更改 -->
+<generatorConfiguration>
+    <!-- 指定文件路径 -->
+    <classPathEntry location="E:\Java\selfProject/mysql-connector-java-5.1.16.jar" />
+
+    <!--
+        <context> 元素用于指定生成一组对象的环境，可以配置多个。例如指定要连接的数据库，要生成对象的类型和要处理的数据库中的表。运行 MBG的
+        时候还可以指定要运行的 <context>。
+
+        id，用来唯一确定一个<context>元素，该id属性可以在运行 MyBatis Generator（MBG）时使用。
+
+        defaultModelType，这个属性很重要，它定义了 MBG如何生成实体类。（不使用默认值）
+            1，conditional：默认值，与hierarchical模型相似,除了如果一个实体类只包含一个字段,则不会单独生成此实体类。因此如果一个表的主键
+                            只有一个字段,那么不会为该字段生成单独的实体类,会将该字段合并到基本实体类中；
+            2，flat：所有内容（主键，blob）等全部生成在一个对象中，该模型为每一张表只生成一个实体类。这个实体类包含表中的所有字段。这种模型
+                            最简单，推荐使用。；
+            3，hierarchical：如果表有主键,那么该模型会产生一个单独的主键实体类,如果表还有BLOB字段，则会为表生成一个包含所有BLOB字段的单独
+                            的实体类,然后为所有其他的字段生成一个单独的实体类。MBG会在所有生成的实体类之间维护一个继承关系。显然这个模型比较复杂。
+
+        targetRuntime:
+            1，MyBatis3：默认的值，生成基于MyBatis3.x以上版本的内容，包括XXXBySample；
+            2，MyBatis3Simple：类似MyBatis3，只是不生成XXXBySample；
+
+        introspectedColumnImpl：类全限定名，用于扩展MBG
+
+        targetRuntime:此属性用于指定生成的代码的运行时环境，（使用默认值），因为使用 MyBatis3Simple则在 mapper文件中不会生成动态 sql。
+    -->
+    <!--<context id="mysqlTables" defaultModelType="flat" targetRuntime="MyBatis3Simple">-->
+    <context id="mysqlTables" defaultModelType="flat" targetRuntime="MyBatis3">
+
+        <!-- 该元素最多可以配置1个，用于在 MBG生成的代码中可以包含注释信息，即生成表或字段的备注信息。 -->
+        <commentGenerator>
+            <!-- 是否阻止生成注释信息，如果不阻止的话，每个方法上都会生成系统注释，没毛用 -->
+            <property name="suppressAllComments" value="true" />
+            <!-- 是否阻止生成包含时间的注释信息 -->
+            <property name="suppressDate" value="true" />
+        </commentGenerator>
+
+        <!--
+            用于指定数据库连接信息，该元素必选，并且只能有一个。
+            配置该元素只需要注意如果 JDBC驱动不在 classpath下，就需要通过 <classPathEntry>元素引入jar包。推荐将 jar包放到 classpath下。
+        -->
+        <jdbcConnection driverClass="com.mysql.jdbc.Driver" connectionURL="jdbc:mysql://localhost:3306/test"
+                        userId="root" password="123456" />
+
+        <!--
+            该元素最多可以配置一个，是用来指定JDBC类型和Java类型如何转换。
+            可以配置的属性为 forceBigDecimals，该属性可以控制是否强制 DECIMAL 和 NUMERIC 类型的字段转换为 Java类型的 java.math.
+            BigDecimal,默认值为false，一般不需要配置。
+        -->
+        <javaTypeResolver>
+            <property name="forceBigDecimals" value="false" />
+        </javaTypeResolver>
+
+        <!--
+            该元素必须配置一个，并且最多一个。用来控制生成的实体类，根据<context>中配置的 defaultModelType，一个表可能会对应生成多个
+            不同的实体类。一个表对应多个类实际上并不方便，所以前面也推荐使用flat，这种情况下一个表对应一个实体类。
+        -->
+        <javaModelGenerator targetPackage="hyman.entity" targetProject="src/main/java">
+
+            <!--
+                如果为 true，MBG会根据 catalog（目录）和 schema（图解模式）来生成子包。如果false就会直接用targetPackage属性。默认为false
+                schema就是数据库对象的集合，这个集合包含了各种对象如：表、视图、存储过程、索引等。为了区分不同的集合，就需要给不同的集合
+                起不同的名字，默认情况下一个用户对应一个集合，用户的schema名等于用户名，并作为该用户缺省schema。所以schema集合看上去像用户名。
+
+                按照SQL标准的解释，在SQL环境下 Catalog和 Schema都属于抽象概念，可以把它们理解为一个容器或者数据库对象命名空间中的一个层次，
+                主要用来解决命名冲突问题。从概念上说，一个数据库系统包含多个 Catalog，每个 Catalog又包含多个 Schema，而每个 Schema又包含
+                多个数据库对象（表、视图、字段等），反过来讲一个数据库对象必然属于一个Schema，而该 Schema又必然属于一个 Catalog，这样我们就
+                可以得到该数据库对象的完全限定名称从而解决命名冲突的问题了；例如数据库对象表的完全限定名称就可以表示为：Catalog名称.Schema名
+                称.表名称。
+                这里还有一点需要注意的是，ＳＱＬ标准并不要求每个数据库对象的完全限定名称是唯一的，就象域名一样，如果喜欢的话每个ＩＰ地址都可以拥有多个域名。
+
+                现在的理解就是在库与库之间就是 Catalog，数据库和数据表之间还有个 schema。就以仓库做参考来理解，数据库相当于仓库，schema则相
+                当于仓库里面的库房（或者说房间），而表相当于货架（货架上一行行的就当是记录）。如果我是仓库管理员，那么就会有所有仓库里库房的钥匙
+                （即管理整个数据库的权限），那么如果我想把其中的某个库房给其他人管的话，我只需要把这个库房的门钥匙给他就成（即管理schema的权限）
+                。如果只是看的话，我可以给他打开这个库房门上小窗的钥匙（想想电影里经常出现的给牢里犯人送饭的那个小窗）。
+            -->
+            <property name="enableSubPackages" value="true" />
+
+            <!-- 是否对数据库查询结果进行trim操作 -->
+            <property name="trimStrings" value="true" />
+        </javaModelGenerator>
+
+
+        <!-- 自动生成 xml mapper文件，必需指定，mybatis 默认路径是 resources -->
+        <sqlMapGenerator targetPackage="mapping" targetProject="src/main/resources">
+            <property name="enableSubPackages" value="true" />
+        </sqlMapGenerator>
+
+
+        <!-- 自动生成Mapper接口 -->
+        <!--<javaClientGenerator type="XMLMAPPER" targetPackage="com.hyman.dao"-->
+                             <!--targetProject="src\main\java" />-->
+
+        <!--
+            该元素至少要配置一个，可以配置多个。是用来要通过内省的表，生成实体类和其他文件。
+            domainObjectName，生成对象的基本名称。如果没有指定，MBG会自动根据表名来生成名称。
+            enableXXX，XXX代表多种SQL方法，该属性用来指定是否生成对应的XXX语句。
+        -->
+        <!--<table tableName="user" domainObjectName="User"-->
+                <!--enableCountByExample="false" enableSelectByExample="false"-->
+                <!--enableUpdateByExample="false" enableDeleteByExample="false">-->
+        <!--</table>-->
+        <table tableName="sessions" domainObjectName="Sessions"
+               enableCountByExample="false" enableSelectByExample="false"
+               enableUpdateByExample="false" enableDeleteByExample="false">
+        </table>
+
+        <!-- 当使用了 Mybatis3Simple运行环境时，就不用设置 enableXXX 了，因为它默认就是不生成 example 动态sql语句 -->
+        <!--<table tableName="user" domainObjectName="User">-->
+        <!--</table>-->
+    </context>
+</generatorConfiguration>

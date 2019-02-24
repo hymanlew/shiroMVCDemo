@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="http://ehcache.org/ehcache.xsd"
+         maxBytesLocalDisk="1G">
+
+    <!--
+         磁盘存储:将缓存中暂时不使用的对象,转移到硬盘,类似于Windows系统的虚拟内存
+         path:指定在硬盘上存储对象的路径。
+
+         如果不希望 Ehcache 创建磁盘存储的路径，则可以不定义diskStore元素。在没有定义diskStore，但有cache需要使用磁盘存储时
+         会默认使用java.io.tmpdir作为磁盘存储的路径。
+
+       diskStore元素的 path属性使用如下值时将自动替换为实际对应的值：
+
+       java.io.tmpdir：默认的临时文件存放路径。
+       user.home：用户的主目录。
+       user.dir：用户的当前工作目录，即当前程序所对应的工作路径。
+
+       其它通过命令行指定的系统属性，如“java –DdiskStore.path=D:\\abc ……”。
+    -->
+    <diskStore path="java.io.tmpdir"/>
+
+    <!--
+        设定具体的命名缓存的数据过期策略。每个命名缓存代表一个缓存区域。
+        缓存区域(region)：一个具有名称的缓存块，可以给每一个缓存块设置不同的缓存策略。
+        如果没有设置任何的缓存区域，则所有被缓存的对象，都将使用默认的缓存策略。即：<defaultCache.../>
+
+        Hibernate 在不同的缓存区域保存不同的类/集合。
+        对于类而言，区域的名称是类名。如:com.atguigu.domain.Customer
+        对于集合而言，区域的名称是类名加属性名。如com.atguigu.domain.Customer.orders
+
+        cache:为指定名称的对象进行缓存的特殊配置。
+        name:指定对象的完整名，它的取值为类的全限定名或类的集合的名字。
+    -->
+    <cache name="authorizationCache"
+           maxEntriesLocalHeap="10000"
+           eternal="false"
+           timeToIdleSeconds="3600"
+           timeToLiveSeconds="0"
+           overflowToDisk="false"
+           statistics="true">
+    </cache>
+
+    <cache name="authenticationCache"
+           maxEntriesLocalHeap="10000"
+           eternal="false"
+           timeToIdleSeconds="3600"
+           timeToLiveSeconds="0"
+           overflowToDisk="false"
+           statistics="true">
+    </cache>
+
+    <!-- 它必须与 sessionmanager 中的名字相同，否则就无法正常缓存 session 数据 -->
+    <cache name="shiro-activeSessionCache"
+           maxEntriesLocalHeap="10000"
+           eternal="false"
+           timeToIdleSeconds="3600"
+           timeToLiveSeconds="0"
+           overflowToDisk="false"
+           statistics="true">
+    </cache>
+
+    <!-- defaultCache:默认的缓存配置信息,如果不加特殊说明,则所有对象按照此配置项处理。 -->
+    <defaultCache
+        maxElementsInMemory="10000"
+        eternal="false"
+        timeToIdleSeconds="120"
+        timeToLiveSeconds="120"
+        overflowToDisk="true"
+        />
+
+    <!--
+      配置自定义缓存
+      name : 缓存名称。
+      maxElementsInMemory ：缓存中允许创建的最大对象数
+      eternal ：缓存中对象是否为永久的，如果是，timeout 超时设置将被忽略，对象从不过期。
+      timeToIdleSeconds ：设置对象在失效前的允许闲置时间（单位：秒）。可选属性，默认值是0，也就是可闲置时间无穷大。只能在元素
+               不是永久驻留时有效，即 eternal=false 时。
+      timeToLiveSeconds ：设置对象在失效前允许存活时间（单位：秒）。最大时间介于创建时间和失效时间之间。仅当eternal=false对象
+               不是永久有效时使用，默认是0，也就是对象存活时间无穷大。
+      overflowToDisk ：内存不足时，当内存中对象数量达到 maxElementsInMemory 时，是否启用磁盘缓存。
+      diskSpoolBufferSizeMB ：设置DiskStore（磁盘缓存）的缓存区大小。默认是30MB。每个Cache都应该有自己的一个缓冲区。
+      maxElementsOnDisk ：硬盘最大缓存个数。
+      diskPersistent ：是否缓存虚拟机重启期数据 Whether the disk store persists between restarts of the Virtual Machine.
+               The default value is false.
+      diskExpiryThreadIntervalSeconds ：磁盘失效线程运行时间间隔，默认是120秒。
+      memoryStoreEvictionPolicy ：缓存满了之后，当达到maxElementsInMemory限制时，Ehcache将会根据指定的策略去清理内存。默认策
+               略是LRU（最近最少使用）。你可以设置为FIFO（先进先出）或是LFU（较少使用）的淘汰算法。
+      clearOnFlush ：内存数量最大时是否清除。
+      statistics：是统计的意思, 得到缓存读取的命中次数 cache.getStatistics().getCacheHits();
+               得到缓存读取的错失次数 cache.getStatistics().getCacheMisses();
+
+
+      缓存大小的限制可以设置在CacheManager上，也可以设置在单个的Cache上。我们可以设置缓存使用内存的大小，也可以设置缓存使用磁盘
+      的大小，但是使用堆内存的大小是必须设置的，其它可设可不设，默认不设就是无限制。在设置缓存大小的时候，我们可以设置缓存使用某
+      一个存储器的最大字节数，也可以设置缓存在某一个存储器上最多存放元素的数量。
+
+       CacheManager级别有三个属性可以分别用来限制三种存储器缓存信息的大小，其控制的都是字节数，分别是 maxBytesLocalHeap、
+       maxBytesLocalOffHeap 和 maxBytesLocalDisk。CacheManager级别限制的大小是其内所有的Cache共享的。
+
+       maxBytesLocalHeap：是用来限制缓存所能使用的堆内存的最大字节数的，其单位可以是K、M或G，不区分大小写。默认是0，表示不限制。
+       但是当我们没有指定 CacheManager 级别的 maxBytesLocalHeap时，我们必须在每一个Cache上指定 maxBytesLocalHeap 或 maxEntriesLocalHeap。
+
+       maxBytesLocalOffHeap：是用来限制缓存所能使用的非堆内存的最大字节数，其单位也可以是K、M或G。默认是0，表示不限制。但是当
+       我们在CacheManager级别指定了maxBytesLocalOffHeap时就会隐式的使所有Cache级别的 overflowToOffHeap（使用非堆内存） 为
+       true，在Cache级别使用该属性时只会使当前 Cache的 overflowToOffHeap 为 true。如果此时不需要 overflowToOffHeap的话，那么
+       我们需要在Cache级别显示的指定 overflowToOffHeap 为 false。只有企业版的 Ehcache才能使用非堆内存存储缓存信息。
+
+       maxBytesLocalDisk：是用来限制缓存所能使用的磁盘的最大字节数的，其单位可以是K、M或G。默认是0，表示不限制。只有在单机环境
+       下才可以使用本地磁盘，分布式环境下是不可以使用的。另外这个设置只适用于临时将缓存内的信息写入到磁盘的情况，对于持久化缓存
+       信息到磁盘的情况是不适用的。Cache级别的maxBytesLocalDisk同样如此。当我们在CacheManager级别指定了maxBytesLocalDisk时会
+       隐式的指定所有Cache的 overflowToDisk 为 true，而Cache级别只会使当前Cache的overflowToDisk为true。
+
+       maxEntriesLocalHeap 是用来限制当前缓存在堆内存上所能保存的最大元素数量的。与 maxElementsInMemory 相似。
+
+       但 maxEntriesLocalHeap（maxElementsInMemory） 和 maxBytesLocalHeap 不能同时出现。也就是说我们不能在一个Cache上同时指
+       定 maxBytesLocalHeap和 maxEntriesLocalHeap。但同时在CacheManager和Cache上指定maxBytesLocalHeap则是允许的。
+  -->
+</ehcache>

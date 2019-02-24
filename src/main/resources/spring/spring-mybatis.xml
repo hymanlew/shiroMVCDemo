@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:tx="http://www.springframework.org/schema/tx" xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util" xsi:schemaLocation="http://www.springframework.org/schema/beans
+http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+http://www.springframework.org/schema/tx
+http://www.springframework.org/schema/tx/spring-tx-3.2.xsd
+http://www.springframework.org/schema/aop
+http://www.springframework.org/schema/aop/spring-aop-3.2.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+
+
+	<!--
+		在使用此配置调用 properties数据源配置文件时出现 Access denied for user 'Administrator'@'localhost' (using password: YES) 错误！
+		错误原因：是在系统中也有个 username属性，这时系统变量覆盖了Properties中的值，这时取得username的值为系统的用户名Administrator，密码为
+		properties 中的 password去查询数据库，此时用户名名和密码并不匹配就会报错。在Spring完成注入时是用 "${..}" 方式获取值完成注入的。而通过这种
+		表达式也能直接获取到JVM系统属性..........
+
+		方案一：将properties文件中的username换成user或其他就字符串就可以成功获取连接访问数据库。建议：username是敏感词汇，为了安全起见还是尽量不要使用username。
+　　		方案二：在该配置语句中添加一个 system-properties-mode属性，它有三个值：FALLBACK（默认值，不存在时覆盖），NEVER（不覆盖），OVERRIDE（覆盖）。
+			   即选择前两个。
+		方案三：使用 PropertyPlaceholderConfigurer。
+	-->
+	<context:property-placeholder ignore-resource-not-found="true" location="classpath:config/db.properties" />
+
+	<!-- 只适用于 dbcp连接池，使用 #{name}来接收参数 -->
+    <!--<util:properties id="jdbc" location="classpath:config/db.properties" />-->
+
+	<!--<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">-->
+		<!--<property name="locations">-->
+			<!--<list>-->
+				<!--<value>classpath:config/db.properties</value>-->
+			<!--</list>-->
+		<!--</property>-->
+	<!--</bean>-->
+
+	<!-- 配置真实数据源 -->
+	<bean name="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+        <property name="driverClassName" value="${driver}" />
+		<property name="url" value="${url}" />
+		<property name="username" value="${name}" />
+		<property name="password" value="${password}" />
+		<property name="initialSize" value="${initialSize}" />
+		<property name="maxActive" value="${maxActive}" />
+		<property name="validationQuery" value="${validationQuery}" />
+		<property name = "filters" value = "${filters}" />
+		<!-- .... -->
+	</bean>
+
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean" >
+        <property name="configLocation" value="classpath:spring/mybatis-config.xml" />
+		<property name="dataSource" ref="dataSource" />
+
+		<!-- 自动扫描 mapper目录, 省掉了 mybatis-config 中 Configuration里的手工配置 -->
+		<property name="mapperLocations" value="classpath:mapping/*.xml" />
+	</bean>
+
+	<!-- myBatis 在 basedao中使用 -->
+	<!--
+		在使用Mybatis与Spring集成的时候我们用到了SqlSessionTemplate 这个类。
+
+		通过源码我们何以看到 SqlSessionTemplate 实现了SqlSession接口，也就是说我们可以使用SqlSessionTemplate 来代理以往的
+		DefailtSqlSession完成对数据库的操作，但是DefailtSqlSession这个类不是线程安全的，所以这个类不可以被设置成单例模式的。
+
+		如果是常规开发模式 我们每次在使用 DefailtSqlSession的时候都从 SqlSessionFactory当中获取一个就可以了。但是与Spring集成以后，
+		Spring提供了一个全局唯一的 SqlSessionTemplate示例来完成 DefailtSqlSession的功能，问题就是：无论是多个dao使用一个
+		SqlSessionTemplate，还是一个 dao使用一个 SqlSessionTemplate，SqlSessionTemplate都是对应一个sqlSession，当多个web线程调
+		用同一个dao时，它们使用的是同一个SqlSessionTemplate，也就是同一个SqlSession（即是线程安全的，用到了代理模式）。
+	-->
+	<bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+		<!-- 选择默认的构造器 -->
+		<constructor-arg index="0" ref="sqlSessionFactory" />
+
+		<!-- 如果想要进行批量操作可加入这个属性 -->
+		<!--<constructor-arg index="1" value="BATCH" />-->
+	</bean>
+
+	<!-- 会自动扫描指定的项目下的 Dao 接口，并且不用写实现类 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="hyman.dao" />
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+	</bean>
+
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+
+	<!-- 拦截器方式配置事务，使用 spring-tx 的声明式事务方式，配置事务通知属性 -->
+	<!-- 多事务语义配置，即配置多个不同事务级别的 bean -->
+	<tx:advice id="transactionInterceptor" transaction-manager="transactionManager">
+		<!-- 定义事务传播属性 -->
+        <tx:attributes>
+			<tx:method  name="save*"
+						propagation="REQUIRED"
+						isolation="READ_COMMITTED"
+						timeout="-1"
+			            read-only="false"
+			            no-rollback-for=""
+			            rollback-for=""/>
+            <tx:method name="insert*" propagation="REQUIRED" />
+            <tx:method name="add*" propagation="REQUIRED" />
+			<tx:method name="update*" propagation="REQUIRED" />
+            <tx:method name="delete*" propagation="REQUIRED" />
+            <tx:method name="find*" propagation="REQUIRED" read-only="true" />
+            <tx:method name="*" propagation="REQUIRED" read-only="true" />
+            <!-- ..... -->
+		</tx:attributes>
+	</tx:advice>
+
+	<!--
+		<tx:advice>：id用于指定此通知的名字， transaction-manager用于指定事务管理器，默认的事务管理器名字为“transactionManager”；
+		<tx:method>：用于定义事务属性即相关联的方法名；
+
+         name：定义与事务属性相关联的方法名，将对匹配的方法应用定义的事务属性，可以使用“*”通配符来匹配一组或所有方法；
+
+         propagation：事务传播行为定义，默认为“REQUIRED”，其值可以通过TransactionDefinition的静态传播行为变量的“PROPAGATION_”后
+         			边部分指定，如“TransactionDefinition.PROPAGATION_REQUIRED”（在方法注解中设置）；
+
+         isolation：事务隔离级别定义；默认为“DEFAULT”，其值可以通过TransactionDefinition的静态隔离级别变量的“ISOLATION_”后边部分
+         			指定，如“TransactionDefinition. ISOLATION_DEFAULT”可以使用“DEFAULT”指定：
+
+         timeout：事务超时时间设置，单位为秒，默认-1，表示事务超时将依赖于底层事务系统；
+
+         read-only：事务只读设置，默认为false，表示不是只读；
+
+         rollback-for：需要触发回滚的异常定义，以“，”分割，默认任何RuntimeException 将导致事务回滚，而任何Checked Exception 将不导
+         			致事务回滚；异常名字定义和TransactionProxyFactoryBean中含义一样
+
+         no-rollback-for：不被触发进行回滚的 Exception(s)；以“，”分割；异常名字定义和TransactionProxyFactoryBean中含义一样；
+
+
+		声明式事务是如何实现事务管理的呢？还记得TransactionProxyFactoryBean实现配置式事务管理，配置式事务管理是通过代理方式实现，而声明
+		式事务管理同样是通过AOP代理方式实现。
+
+		声明式事务通过AOP代理方式实现事务管理，利用环绕通知TransactionInterceptor实现事务的开启及关闭，而TransactionProxyFactoryBean
+		内部也是通过该环绕通知实现的，因此可以认为是<tx:tags/>帮你定义了TransactionProxyFactoryBean，从而简化事务管理。
+	-->
+
+	<!--
+		与其他AOP通知协作：
+       Spring声明式事务实现其实就是Spring AOP+ 线程绑定实现，利用AOP实现开启和关闭事务，利用线程绑定（ThreadLocal）实现跨越多个方法实现
+       事务传播。
+
+       由于我们不可能只使用一个事务通知，可能还有其他类型事务通知，而且如果这些通知中需要事务支持怎么办？这就牵扯到通知执行顺序的问题上了，因
+       此如果可能与其他AOP通知协作的话，而且这些通知中需要使用声明式事务管理支持，事务通知应该具有最高优先级。
+
+ 		声明式or编程式：
+       编程式事务是不推荐的，即使有很少事务操作，Spring发展到现在，没有理由使用编程式事务，只有在为了深入理解Spring事务管理才需要学习编程式
+       事务使用。
+
+       推荐使用声明式事务，而且强烈推荐使用<tx:tags>方式的声明式事务，因为其是无侵入代码的，可以配置模板化的事务属性并运用到多个项目中。
+
+       而@Transaction注解事务，可以使用，不过作者更倾向于使用<tx:tags>声明式事务。能保证项目正常工作的事务配置就是最好的。
+
+		混合事务管理：
+		所谓混合事务管理就是混合多种数据访问技术使用，如混合使用Spring JDBC + Hibernate，接下来让我们学习一下常见混合事务管理：
+
+		1、  Hibernate + Spring JDBC/iBATIS：使用HibernateTransactionManager即可支持；
+
+		2、  JPA + Spring JDBC/iBATIS：使用JpaTransactionManager即可支持；
+
+		3、  JDO + Spring JDBC/iBATIS：使用JtaTransactionManager即可支持；
+
+		混合事务管理最大问题在于如果我们使用第三方ORM框架，如Hibernate，会遇到一级及二级缓存问题，尤其是二级缓存可能造成如使用Spring JDBC
+		和Hibernate查询出来的数据不一致等。因此不建议使用这种混合使用和混合事务管理。
+	-->
+
+	<!--
+		<aop:config>：AOP相关配置，配置事务切面：
+		<aop:pointcut/>：切入点定义，定义名为"serviceMethod"的aspectj切入点，切入点表达式为"execution(* cn..chapter9.service..*.*(..))"
+					表示拦截cn包及子包下的chapter9. service包及子包下的任何类的任何方法；
+					第一个*含义是：代表所有类型的返回值，第二个*是代表 service包下的所有类，第三个是类下的所有方法，括号中两个点表示任意个形参。
+		<aop:advisor>：Advisor定义，其中切入点为serviceMethod，通知为txAdvice。
+	-->
+	<aop:config>
+		<aop:pointcut id="transactionPointcut" expression="execution(* hyman.service.*.*(..))" />
+		<aop:advisor advice-ref="transactionInterceptor" pointcut-ref="transactionPointcut" />
+	</aop:config>
+	<aop:aspectj-autoproxy />
+
+
+    <!-- start =======  在正常的功能下，以下设置也可以不设置，忽略 -->
+    <!-- 启用使用注解事务，添加驱动，使用时可以在方法上加上 @Transaction 注解 -->
+    <!--<tx:annotation-driven transaction-manager="transactionManager" />-->
+
+    <!--<aop:config proxy-target-class="true">-->
+        <!--<aop:advisor advice-ref="druidInterceptor" pointcut-ref="druidPointcut" />-->
+    <!--</aop:config>-->
+    <!-- end =======  在正常的功能下，以下设置也可以不设置，忽略 -->
+
+
+	<!-- 配置druid监控spring jdbc，路径为 http://127.0.0.1:8080/druid/index.html -->
+	<bean id="druidInterceptor" class="com.alibaba.druid.support.spring.stat.DruidStatInterceptor" />
+	<bean id="druidPointcut" class="org.springframework.aop.support.JdkRegexpMethodPointcut" scope="prototype">
+		<property name="patterns">
+			<list>
+				<value>hyman.service.*.*(..)</value>
+				<value>hyman.dao.*.*(..)</value>
+			</list>
+		</property>
+	</bean>
+
+</beans>

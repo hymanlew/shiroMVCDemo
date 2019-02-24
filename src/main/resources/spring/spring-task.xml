@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xsi:schemaLocation="
+            http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+            http://www.springframework.org/schema/task
+            http://www.springframework.org/schema/task/spring-task-4.2.xsd">
+
+    <!-- 启用定时任务功能，使用时只需加 @scheduled 注解即可，本配置文件的命名空间不可更改，否则任务不会执行-->
+    <task:annotation-driven />
+
+    <!--
+        如果定时任务很多，可以配置 executor（执行器）线程池，这里 executor的含义和 java.util.concurrent.Executor是一样的，pool-size
+        的大小官方推荐为5~10。
+        scheduler（程序调度）的 pool-size是 ScheduledExecutorService线程池，默认为1。
+    -->
+    <!--<task:scheduler id="scheduler" pool-size="10" />-->
+    <!--<task:executor id="executor" keep-alive="3600" pool-size="100-200" queue-capacity="500" rejection-policy="CALLER_RUNS" />-->
+    <!--<task:annotation-driven executor="executor" scheduler="scheduler"/>-->
+
+</beans>
