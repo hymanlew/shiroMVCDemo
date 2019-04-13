@@ -114,6 +114,4 @@
     <bean id="filterChainMap" factory-bean="filterChainBuilder" factory-method="buildFilterChainMap" />
     <bean id="filterChainBuilder" class="hyman.utils.FilterChainMapBuilder" />
 
-
-
 </beans>
