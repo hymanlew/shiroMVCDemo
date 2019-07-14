@@ -17,6 +17,10 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.7</maven.compiler.source>
     <maven.compiler.target>1.7</maven.compiler.target>
+    <hibernate-validator.version>6.0.14.Final</hibernate-validator.version>
+      <javax-validation.version>2.0.1.Final</javax-validation.version>
+      <freemarker.version>2.3.23</freemarker.version>
+      <shiro.freemarker.tags>0.1</shiro.freemarker.tags>
   </properties>
 
   <dependencies>
@@ -199,6 +203,16 @@
           <artifactId>jackson-databind</artifactId>
           <version>2.8.11</version>
       </dependency>
+      <!--
+      jackson-module-parameter-names：模块用于获取参数名（Java 8新增的特性）。
+      jackson-datatype-money：提供了对 javax.money 类型的支持（非官方模块）
+      jackson-datatype-hibernate：提供了Hibernate相关的类型和属性支持（包含懒加载aspects）
+      -->
+      <dependency>
+          <groupId>com.fasterxml.jackson.module</groupId>
+          <artifactId>jackson-module-parameter-names</artifactId>
+          <version>2.8.11</version>
+      </dependency>
 
       <!-- json 对象与 json 格式字符串，相互转换的两种方式-->
       <dependency>
@@ -210,6 +224,42 @@
           <groupId>org.json</groupId>
           <artifactId>json</artifactId>
           <version>20160212</version>
+      </dependency>
+
+      <!-- 参数验证 -->
+      <dependency>
+          <groupId>org.hibernate.validator</groupId>
+          <artifactId>hibernate-validator</artifactId>
+          <version>${hibernate-validator.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>org.hibernate.validator</groupId>
+          <artifactId>hibernate-validator-annotation-processor</artifactId>
+          <version>${hibernate-validator.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>javax.validation</groupId>
+          <artifactId>validation-api</artifactId>
+          <version>${javax-validation.version}</version>
+      </dependency>
+
+      <!-- freemarker -->
+      <dependency>
+          <groupId>org.freemarker</groupId>
+          <artifactId>freemarker</artifactId>
+          <version>${freemarker.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>net.mingsoft</groupId>
+          <artifactId>shiro-freemarker-tags</artifactId>
+          <version>${shiro.freemarker.tags}</version>
+      </dependency>
+
+      <!--Kaptcha 是一个可高度配置的实用验证码生成工具-->
+      <dependency>
+          <groupId>com.github.axet</groupId>
+          <artifactId>kaptcha</artifactId>
+          <version>0.0.9</version>
       </dependency>
   </dependencies>
 

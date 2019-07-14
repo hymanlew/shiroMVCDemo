@@ -1,6 +1,9 @@
 package hyman.entity;
 
-public class Roles {
+import java.io.Serializable;
+
+// 对于缓存的对象必须实现serizable接口
+public class Roles implements Serializable{
 
     private Integer id;
     private String name;

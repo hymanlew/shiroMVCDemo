@@ -3,12 +3,19 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
+    <!-- 自定义密码加密策略 -->
+    <bean id="passwordService" class="com.hyman.service.impl.HashedPasswordService">
+        <property name="hashAlgorithmName" value="MD5" />
+    </bean>
     <!-- 自定义 realm，使用自定义的 md5 加密 -->
-    <bean id="myRealm" class="hyman.realms.MyRealm"></bean>
+    <bean id="myRealm" class="hyman.realms.MyRealm">
+        <property name="authorizationCacheName" value="authorizationCache" />
+        <property name="authenticationCacheName" value="authenticationCache" />
+    </bean>
 
     <!-- shiro 整合 ehcache -->
     <bean id="cacheManager" class="org.apache.shiro.cache.ehcache.EhCacheManager">
-        <property name="cacheManagerConfigFile" value="classpath:config/ehcache.xml" />
+        <property name="cacheManagerConfigFile" value="classpath:spring/ehcache.xml" />
     </bean>
 
     <!-- Session ID 生成器-->

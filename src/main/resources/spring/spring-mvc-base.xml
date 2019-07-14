@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-4.2.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <!--<context:component-scan base-package="hyman.controller"/>-->
+    <!--<context:component-scan base-package="hyman.service"/>-->
+    <context:component-scan base-package="hyman"/>
+
+    <context:property-placeholder location="classpath:config/*.properties"/>
+
+
+    <!-- 注册验证器 -->
+    <mvc:annotation-driven validator="validator"/>
+
+    <!-- hibernate国际化配置，需要导入 hibernate.validator，和 validation-api 包 -->
+    <bean id="validator"
+          class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean">
+        <property name="providerClass" value="org.hibernate.validator.HibernateValidator"/>
+        <!-- 这里配置将使用上面国际化配置的messageSource -->
+        <property name="validationMessageSource" ref="messageSource"/>
+    </bean>
+    <!--  自定义一个异常信息处理拦截器 -->
+    <bean id="exceptionInterceptor" class="hyman.interceptor.ExceptionInterceptor"/>
+
+    <!-- 验证配置文件，properties 文件，声明了验证失败对应的异常信息。及国际化配置文件 -->
+    <bean id="messageSource"
+          class="org.springframework.context.support.ResourceBundleMessageSource">
+        <property name="basenames">
+            <list>
+                <value>internal.en_US</value>
+                <value>internal.zh_CN</value>
+                <value>config.validator</value>
+            </list>
+        </property>
+    </bean>
+    <!-- 国际化信息处理类 -->
+    <bean id="localeResolver" class="org.springframework.web.servlet.i18n.CookieLocaleResolver" p:cookieMaxAge="100000" />
+
+
+    <!-- spring-mvc 配置根视图 -->
+    <mvc:view-controller path="/" view-name="//index"/>
+    <!--
+    其中path表示为请求的路径，view-name表示为你需要做的资源操作，其中path会首先匹配requestmapping路径，匹配不到后再进行 view-name
+    的资源寻找。
+    view-name中可以输入相对于视图解析器的路径，也可以输入类似于redirect：路径，然后匹配到 requestmapping。
+
+    总结:
+    一：web.xml 中 spring 的过滤路径需为 /*。
+    二：mvc:view-controller 会首先匹配 path中的路径，再执行 view-name的路径寻找。
+    -->
+    <mvc:default-servlet-handler/>
+    <!--
+     在web服务中发送请求需要同后台的 requestmapping所匹配，然后再返回页面，但是有时不想走后台，直接请求页面，这里我们就需要
+    使用<mvc:resources/>指令，用以匹配mapping的路径都映射到视图解析器的资源前缀加上 mvc：resources的location。
+    -->
+    <mvc:resources mapping="/js/**" location="/js/"/>
+    <mvc:resources mapping="/css/**" location="/css/"/>
+
+
+    <!--
+    启动矩阵变量传参，即使用多条件组合查询，过滤查出的数据。并配置请求与响应的数据的格式，json 或 xml 或 string。
+
+    在 AnnotationDrivenBeanDefinitionParser 源码 parse 方法中，分别实例化了RequestMappingHandlerMapping，
+    ConfigurableWebBindingInitializer，RequestMappingHandlerAdapter 等诸多类。
+    其中 RequestMappingHandlerMapping 和 RequestMappingHandlerAdapter 这两个类比较重要。
+
+    RequestMappingHandlerMapping 处理请求映射的，处理@RequestMapping跟请求地址之间的关系。
+    RequestMappingHandlerAdapter 是请求处理的适配器，即请求之后处理具体逻辑的执行，关系到哪个类的哪个方法以及转换器等工作。
+     -->
+    <mvc:annotation-driven enable-matrix-variables="true">
+        <mvc:message-converters>
+            <ref bean="JsonConverter"/>
+            <ref bean="stringConverter"/>
+            <ref bean="xmlConverter"/>
+        </mvc:message-converters>
+    </mvc:annotation-driven>
+    <!--<bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">-->
+    <!--<property name="messageConverters">-->
+    <!--<list>-->
+    <!--<ref bean="JsonConverter"></ref>-->
+    <!--</list>-->
+    <!--</property>-->
+    <!--</bean>-->
+
+    <!-- 它会自动将对象转换成Json格式数据，并且我们可以指定转换器的一些属性，例如上面指定了日期格式  -->
+    <bean id="JsonConverter" class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+        <property name="supportedMediaTypes">
+            <list>
+                <value>text/html;charset=UTF-8</value>
+                <value>application/json;charset=UTF-8</value>
+            </list>
+        </property>
+        <property name="objectMapper" ref="objectMapper"/>
+    </bean>
+    <bean id="stringConverter" class="org.springframework.http.converter.StringHttpMessageConverter">
+        <constructor-arg value="UTF-8"/>
+    </bean>
+    <bean id="xmlConverter" class="org.springframework.http.converter.xml.MappingJackson2XmlHttpMessageConverter">
+        <property name="objectMapper" ref="xmlMapper"/>
+    </bean>
+
+    <!-- 设置 tab缩进，日期格式，空对象返回 null，指定 json 转换模块（用于获取参数名）等等 -->
+    <bean id="objectMapper" class="org.springframework.http.converter.json.Jackson2ObjectMapperFactoryBean"
+          p:indentOutput="true"
+          p:simpleDateFormat="yyyy-MM-dd" p:failOnUnknownProperties="true"
+          p:failOnEmptyBeans="true"
+          p:modulesToInstall="com.fasterxml.jackson.module.paramnames.ParameterNamesModule">
+        <property name="serializers">
+            <array>
+                <!-- 引用到自定义的 json 转换类，里面封装了动态获取国际化配置文件的信息（即不同国家显示不同）。引用了 messageSource -->
+                <bean class="hyman.config.JsonDataSerializer"/>
+            </array>
+        </property>
+    </bean>
+    <bean id="xmlMapper" parent="objectMapper" p:createXmlMapper="true"/>
+
+
+    <!-- 防重复提交拦截器 -->
+    <bean id="tokenInterceptor" class="hyman.interceptor.TokenInterceptor" />
+    <mvc:interceptors>
+        <!-- 配置Token拦截器，防止用户重复提交数据 -->
+        <mvc:interceptor>
+            <mvc:mapping path="/**" />
+            <mvc:exclude-mapping path="/resources/**" />
+            <ref bean="tokenInterceptor" />
+        </mvc:interceptor>
+        <!-- 配置异常拦截器 -->
+        <mvc:interceptor>
+            <mvc:mapping path="/**" />
+            <mvc:exclude-mapping path="/resources/**" />
+            <ref bean="exceptionInterceptor" />
+        </mvc:interceptor>
+        <!-- api计时拦截器 -->
+        <mvc:interceptor>
+            <mvc:mapping path="/**" />
+            <bean class="hyman.interceptor.ApiInterceptor" />
+        </mvc:interceptor>
+    </mvc:interceptors>
+
+
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <property name="maxUploadSize" value="10485760" />
+    </bean>
+
+    <!-- 扩展 servletContext ，以静态变量保存Spring ApplicationContext, 可在任何代码任何地方任何时候中取出ApplicaitonContext -->
+    <bean id="SpringContextHolder" class="hyman.config.SpringContextHolder"></bean>
+
+    <!--
+    默认情况下，Spring容器仅允许最多定义一个PropertyPlaceholderConfigurer 或 <content:property-placeholder>，如果有多个属性文件，
+    先扫描到的被保留，其余的会被Spring忽略。
+    其实 content:property-placeholder 内部实现就是实例化了一个 PropertyPlaceholderConfigurer。
+    解决办法：
+    在所有 PropertyPlaceholderConfigurer 或 <content:property-placeholder>配置中加上<property name="ignoreUnresolvablePlaceholders"
+    value="true"/>配置（告诉Spring容器扫描到这个属性文件后，可以继续往下扫描一个属性文件），就可以扫描到所有的属性文件。
+    -->
+    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath:config/db.properties</value>
+            </list>
+        </property>
+    </bean>
+    <bean id="properties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+        <property name="locations">
+            <list>
+                <value>classpath*:config/sys.properties</value>
+            </list>
+        </property>
+        <qualifier value="main" />
+    </bean>
+    <bean id="propertyUtils" class="hyman.utils.PropertyUtils">
+        <property name="properties" ref="properties" />
+    </bean>
+
+    <!-- 国际化配置文件存取器 -->
+    <bean id="messageSourceAccessor" class="org.springframework.context.support.MessageSourceAccessor">
+        <constructor-arg ref="messageSource" />
+    </bean>
+
+    <bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+
+    <tx:annotation-driven transaction-manager="txManager" />
+
+    <!-- 手机图形验证码 -->
+    <bean id="captchaProducer" class="com.google.code.kaptcha.impl.DefaultKaptcha">
+        <property name="config">
+            <bean class="com.google.code.kaptcha.util.Config">
+                <constructor-arg>
+                    <props>
+                        <prop key="kaptcha.border">no</prop>
+                        <prop key="kaptcha.border.color">105,179,90</prop>
+                        <prop key="kaptcha.textproducer.font.color">red</prop>
+                        <prop key="kaptcha.image.width">250</prop>
+                        <prop key="kaptcha.textproducer.font.size">70</prop>
+                        <prop key="kaptcha.image.height">90</prop>
+                        <prop key="kaptcha.session.key">code</prop>
+                        <prop key="kaptcha.textproducer.char.length">4</prop>
+                        <prop key="kaptcha.textproducer.font.names">宋体,楷体,微软雅黑</prop>
+                    </props>
+                </constructor-arg>
+            </bean>
+        </property>
+    </bean>
+
+    <!-- 用于自主的来调用配置在 Spring IOC 容器中 shiro bean 的生命周期方法。必须在 spring-mvc 中配置 -->
+    <bean id="lifecycle" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>
+    <!-- 开启 shiro 注解，基于 AOP -->
+    <bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator" depends-on="lifecycle">
+        <!--
+        proxy-target-class="true" 与 proxy-target-class="false"的区别：
+        该属性值决定是基于接口的还是基于类的代理被创建。如果属性值设置为true，那么基于类的代理将起作用（这时需要cglib库）。
+        如果设置为 false 或者这个属性被省略，那么标准的JDK 基于接口的代理。
+
+        而如果设置为 false，或是默认不设置，则有可能抛出 NoSuchBeanDefinitionException: No unique bean of type 异常。
+        -->
+        <property name="proxyTargetClass" value="true"/>
+    </bean>
+    <bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+        <property name="securityManager" ref="securiManager"/>
+    </bean>
+
+    <!-- 未认证或未授权时跳转必须在springmvc里面配 -->
+    <bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+        <property name="exceptionMappings">
+            <props>
+                <!--表示捕获的异常 -->
+                <prop key="org.apache.shiro.authz.UnauthorizedException">
+                    <!--捕获该异常时跳转的路径 -->
+                    /wrongperson.jsp
+                </prop>
+                <prop key="org.apache.shiro.authz.UnauthenticatedException">
+                    /wrongperson.jsp
+                </prop>
+                <!--  自定义一个全局异常处理器，继承 runtimeException -->
+                <prop key="hyman.config.CustomException">
+                    redirect:/exception/index
+                </prop>
+            </props>
+        </property>
+    </bean>
+</beans>

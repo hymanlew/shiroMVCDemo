@@ -68,6 +68,7 @@ public class MyRealm extends AuthorizingRealm{
     protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token) throws AuthenticationException {
 
         // 接收来自 subject 的用户信息：用户名，密码
+        // 需要添加密码 hash 加密验证
         String username = (String)token.getPrincipal();
         User baseUser = userService.getByname(username);
         if(baseUser!=null){

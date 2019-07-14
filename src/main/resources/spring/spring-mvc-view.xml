@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-4.2.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd">
+
+    <!--
+    该 RequestToViewNameTranslator 接口作用是当没有指定（或明确存在的 View）逻辑视图名称时，就可以使用它会自动地提供 view 视
+    图名称和路径。它只有一个实现即 DefaultRequestToViewNameTranslator类。
+    然后该实现类会结合 viewresolver 接口的实现类，将请求的URL映射到默认（自动匹配）的逻辑视图。（例如在控制层中不指定视图名和
+    路径直接返回 ModelAndView，或者使用 freemarker 动态生成 html 页面时）。
+    -->
+    <bean id="viewNameTranslator" class="org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator" />
+
+    <!--  viewresolver 接口的实现类，自定义视图解析，通过配置实现多视图整合，如 jsp,velocity,freemarker,pdf,excel 等等 -->
+    <bean id="viewResolver" class="hyman.config.CustomViewResolver">
+        <property name="defaultViewResolver" ref="beanNameViewResolver"/>
+        <property name="viewResolverMap">
+            <map>
+                <entry>
+                    <key>
+                        <set>
+                            <value>.jsp</value>
+                        </set>
+                    </key>
+                    <ref bean="jspViewResolver"/>
+                </entry>
+                <entry>
+                    <key>
+                        <set>
+                            <value>.vm</value>
+                            <value>.htm</value>
+                        </set>
+                    </key>
+                    <ref bean="velocityViewResolver"/>
+                </entry>
+                <entry>
+                    <key><value>.ftl</value></key>
+                    <ref bean="freeMarkerViewResolver"/>
+                </entry>
+            </map>
+        </property>
+    </bean>
+
+    <bean id="beanNameViewResolver" class="org.springframework.web.servlet.view.BeanNameViewResolver"/>
+
+    <!--
+    UrlBasedViewResolver 将使用 JstlView 对象来渲染结果，并在 handlermethod 返回的 modelAndView基础上，加上配置的前后缀名称。
+    当返回的 viewName 的前缀为 forward：时，则 springmvc将结果通过转发的方式转到对应的视图，这也是 springmvc缺省的使用模式。
+    当返回的 viewName 的前缀为 redirect：时，则 springmvc将结果通过重定向的方式转到对应的视图。
+
+    InternalResourceViewResolver 为 UrlBasedViewResolver的子类，它将 InternalResourceView作为缺省的 View类。如果当前 classpath
+    中有 jstl的 jar包时则使用 JstlView 作为缺省的 view来渲染结果。
+    因此在 UrlBasedViewResolver 需要指定 JstlView 来渲染，而 InternalResourceViewResolver则可以不显示指定。
+    -->
+    <!--<bean id="jspViewResolver" class="org.springframework.web.servlet.view.UrlBasedViewResolver"></bean>-->
+    <bean id="jspViewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="order" value="0" />
+        <property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/>
+        <property name="requestContextAttribute" value="request" />
+        <property name="prefix" value="/WEB-INF/jsp/"/>
+        <!--<property name="suffix" value=".jsp"/>-->
+    </bean>
+
+    <!--  Velocity 已经6年没更新，sping4.3开始不再支持velocity，推荐使用FreeMarker或者Thymeleaf。 -->
+    <!--<bean id="velocityViewResolver" class = "org.springframework.web.servlet.view.velocity.VelocityLayoutViewResolver">-->
+        <!--<property name="order" value="0" />-->
+        <!--<property name="contentType" value="text/html;charset=UTF-8" />-->
+        <!--<property name="requestContextAttribute" value="req"/>-->
+    <!--</bean>-->
+    <!--<bean id="velocityConfig" class = "org.springframework.web.servlet.view.velocity.VelocityConfigurer">-->
+        <!--<property name="configLocation" value="/WEB-INF/velocity.properties"/>-->
+        <!--<property name="resourceLoaderPath" value="/" />-->
+    <!--</bean>-->
+    <bean id="velocityViewResolver" class = "org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="order" value="2" />
+        <property name="contentType" value="text/html;charset=UTF-8" />
+        <property name="requestContextAttribute" value="req"/>
+    </bean>
+
+
+    <!-- 匹配 freemarker 模版 -->
+    <bean id="freeMarkerViewResolver" class="org.springframework.web.servlet.view.freemarker.FreeMarkerViewResolver">
+        <property name="viewClass" value="org.springframework.web.servlet.view.freemarker.FreeMarkerView"/>
+        <property name="contentType" value="text/html;charset=utf-8" />
+        <!-- 暴露关键属性及信息，使其在模版中可用 -->
+        <property name="exposeSpringMacroHelpers" value="true" />
+        <property name="exposeRequestAttributes" value="true" />
+        <property name="exposeSessionAttributes" value="true" />
+        <property name="requestContextAttribute" value="request" />
+        <property name="cache" value="true" />
+        <property name="prefix" value="/WEB-INF/ftl/"/>
+        <!--<property name="suffix" value=".ftl" />-->
+        <property name="order" value="1" />
+    </bean>
+    <!-- 重写配置类的方法，填入全局变量 -->
+    <bean id="freemarkerConfig" class="hyman.config.ShiroTagFreeMarkerConfigurer">
+        <property name="templateLoaderPath" value="/WEB-INF/ftl/" />
+        <property name="freemarkerVariables" value="#{propertyUtils.getBeanMap('directive.')}" />
+        <!--<property name="freemarkerVariables">-->
+            <!--<map>-->
+                <!--<entry key="xml_escape" value-ref="fmXmlEscape"/>-->
+            <!--</map>-->
+        <!--</property>-->
+        <property name="freemarkerSettings">
+            <props>
+                <prop key="template_update_delay">5</prop>
+                <prop key="default_encoding">UTF-8</prop>
+                <prop key="locale">zh_CN</prop>
+                <prop key="datetime_format">yyyy-MM-dd HH:mm:ss</prop>
+                <prop key="date_format">yyyy-MM-dd</prop>
+                <prop key="time_format">HH:mm:ss</prop>
+                <prop key="number_format">0.####</prop>
+                <prop key="boolean_format">true,false</prop>
+                <prop key="whitespace_stripping">true</prop>
+                <prop key="tag_syntax">auto_detect</prop>
+                <prop key="url_escaping_charset">UTF-8</prop>
+            </props>
+        </property>
+    </bean>
+
+    <bean id="freemarkerConfigauto" class="org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer">
+        <property name="templateLoaderPath" value="/html/"/>
+        <property name="freemarkerVariables">
+            <map>
+                <entry key="xml_escape" value-ref="fmXmlEscape" />
+            </map>
+        </property>
+        <property name="defaultEncoding" value="UTF-8"/>
+        <property name="freemarkerSettings">
+            <props>
+                <prop key="template_update_delay">0</prop><!-- 模板多久更新一次 -->
+                <prop key="locale">zh_CN</prop>
+                <prop key="datetime_format">yyyy-MM-dd HH:mm:ss</prop>
+                <prop key="date_format">yyyy-MM-dd</prop>
+                <prop key="number_format">#.##</prop>
+            </props>
+        </property>
+    </bean>
+    <bean id="fmXmlEscape" class="freemarker.template.utility.XmlEscape"/>
+
+</beans>
