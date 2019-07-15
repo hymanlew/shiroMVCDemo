@@ -1,7 +1,9 @@
 package hyman.controller;
 
 import hyman.entity.User;
+import hyman.realms.MyRealm;
 import hyman.service.UserService;
+import hyman.utils.CacheUtil;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.session.Session;
@@ -19,8 +21,28 @@ import java.io.IOException;
 @RequestMapping("/")
 public class AuthController {
 
+    @Resource
+    private MyRealm myRealm;
     @Resource(name = "service")
     private UserService userService;
+
+    /**
+     * 配置shiro注解模式：
+     * @RequiresAuthentication： 验证用户是否登录，等同于方法subject.isAuthenticated() 结果为true时。
+     *
+     * @RequiresUser： 验证用户是否被记忆，user有两种含义：
+     *      一种是成功登录的（subject.isAuthenticated() 结果为true）；
+     *      另外一种是被记忆的（subject.isRemembered() 结果为true）。
+     *
+     * @RequiresGuest： 验证是否是一个guest的请求，与@ RequiresUser完全相反。
+     *      换言之，RequiresUser  == ! RequiresGuest 。此时subject.getPrincipal() 结果为null。
+     *
+     * @RequiresRoles("aRoleName")： 如果subject中有 aRoleName角色才可以访问该方法。如果没有这个权限则会抛出异常 AuthorizationException。
+     *
+     * @RequiresPermissions({"file:read","write:aFile.txt"})： 要求 subject中必须同时含有 file:read和 write:aFile.txt的权
+     *      限才能执行方法someMethod()。否则抛出异常 AuthorizationException。
+     *
+     */
 
     @RequestMapping({"/","/index"})
     public String toIndex(){
@@ -64,6 +86,10 @@ public class AuthController {
 
     @RequestMapping("/logout")
     public String logout(HttpServletRequest req, User user) throws ServletException, IOException {
+
+        // 清空当前用户的缓存信息
+        myRealm.clearUserCache();
+
         // 直接调用 Subject.logout 即可。
         SecurityUtils.getSubject().logout();
         return "redirect:/login.jsp";

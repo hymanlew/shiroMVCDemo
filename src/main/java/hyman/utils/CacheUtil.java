@@ -27,6 +27,7 @@ public class CacheUtil {
         return element == null ? null : element.getObjectValue();
     }
 
+    // 退出时清除用户的权限
     public static void remove(String cacheName, String key) {
         Cache cache = cacheManager.getCache(cacheName);
         cache.remove(key);

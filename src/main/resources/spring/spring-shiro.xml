@@ -1,14 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/util
+        http://www.springframework.org/schema/util/spring-util.xsd">
 
     <!-- 自定义密码加密策略 -->
-    <bean id="passwordService" class="com.hyman.service.impl.HashedPasswordService">
+    <bean id="passwordService" class="hyman.security.HashedPasswordService">
         <property name="hashAlgorithmName" value="MD5" />
     </bean>
-    <!-- 自定义 realm，使用自定义的 md5 加密 -->
+
+    <!-- 自定义密码验证策略 -->
+    <bean id="credentialsMatcher" class="hyman.security.MixHashedCredentialsMatcher">
+        <property name="hashAlgorithmName" value="MD5" />
+    </bean>
+
+    <!-- 自定义 realm，使用自定义的权限认证 service -->
     <bean id="myRealm" class="hyman.realms.MyRealm">
+        <property name="permissionServices">
+            <array>
+                <bean class="com.cme.application.sys.service.impl.PermissionService" />
+            </array>
+        </property>
+        <property name="credentialsMatcher" ref="credentialsMatcher" />
+        <!--<property name="cachingEnabled" value="false" />-->
         <property name="authorizationCacheName" value="authorizationCache" />
         <property name="authenticationCacheName" value="authenticationCache" />
     </bean>
@@ -18,45 +36,9 @@
         <property name="cacheManagerConfigFile" value="classpath:spring/ehcache.xml" />
     </bean>
 
-    <!-- Session ID 生成器-->
-    <bean id="sessionIdGenerator" class="org.apache.shiro.session.mgt.eis.JavaUuidSessionIdGenerator" />
-    <bean id="sessionDao" class="hyman.utils.MySessionDao">
-        <property name="sessionIdGenerator" ref="sessionIdGenerator" />
-        <!-- 设置Session缓存到Eacehc的名字，默认就是shiro-activeSessionCache，它与 ehcache 中定义的名字必须相同 -->
-        <property name="activeSessionsCacheName" value="shiro-activeSessionCache" />
-    </bean>
     <!-- 配置Session管理器 -->
-    <!-- org.apache.shiro.session.mgt.DefaultSessionManager，DefaultWebSessionManager 继承了 DefaultSessionManager 这个类 -->
-    <bean id="sessionManager" class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
-        <!-- session超时 30 分钟 -->
-        <property name="globalSessionTimeout" value="1800000" />
-        <!-- 删除失效的 session -->
-        <property name="deleteInvalidSessions" value="true" />
-        <!-- Session调度器（确认调度开启），用来检查Session是否还存在 -->
-        <property name="sessionValidationSchedulerEnabled" value="true" />
-        <property name="sessionValidationScheduler" ref="sessionScheduler" />
-
-        <!-- 暂时不启用 sessiondao，因为项目启动时它会先自动存储 session -->
-        <!--<property name="sessionDAO" ref="sessionDao" />-->
-
-        <!-- 开启cookie 不然一直登录不上 -->
-        <property name="sessionIdCookieEnabled" value="true" />
-        <property name="sessionIdCookie" ref="sessionIdCookie" />
-    </bean>
-
-    <!-- 全局的会话信息检测，扫描信息间隔为30分钟。 设定检查sesion过期事件（在 sessionManager 中）-->
-    <bean id="sessionScheduler" class="org.apache.shiro.session.mgt.quartz.QuartzSessionValidationScheduler">
-        <property name="sessionValidationInterval" value="1800000" />
-        <property name="sessionManager" ref="sessionManager" />
-    </bean>
-
-    <!-- 会话 Cookie模板，使用sid存储sessionid -->
-    <bean id="sessionIdCookie" class="org.apache.shiro.web.servlet.SimpleCookie">
-        <constructor-arg value="sid"/>
-        <property name="httpOnly" value="true"/>
-        <!-- 过期时间，-1 为浏览器关闭时失效此Cookie -->
-        <property name="maxAge" value="-1"/>
-    </bean>
+    <!-- 将 session 交给 servlet 容器来管理配置，并使用 spring-session -->
+    <bean id="sessionManager" class="org.apache.shiro.web.session.mgt.ServletContainerSessionManager" />
 
     <bean id="rememberMeCookie" class="org.apache.shiro.web.servlet.SimpleCookie">
         <constructor-arg value="rememberMe"/>
@@ -79,12 +61,27 @@
         <property name="rememberMeManager" ref="rememberMeManager" />
     </bean>
 
+
+    <!-- 自定义登录验证过滤器，redis sso  -->
+    <bean id="authenticateFilter" class="com.hyman.security.filter.AuthenticateFilter">
+        <!--<property name="loginUrl" value="${sso.loginUrl}" />-->
+        <property name="loginUrl" value="/login.jsp" />
+    </bean>
+    <!-- 自定义设备登录验证过滤器，pc or client  -->
+    <bean id="clientLoginFilter" class="com.hymans.sso.security.filter.ClientLoginFilter"></bean>
+
     <!-- shiro 过滤器，id 名称必须与 web.xml 中配置的 filter-name 一致，否则会启动不了（the JDBC Driver has been forcibly unregistered）  -->
     <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
         <!-- shiro 的核心安全接口，这个属性是必须的 -->
         <property name="securityManager" ref="securiManager" />
+        <property name="filters">
+            <util:map>
+                <entry key="authc" value-ref="authenticateFilter"/>
+            </util:map>
+        </property>
+
         <!-- 身份验证失败，没有登录时，则跳转到登录页面。使用 session 后默认就走这个 -->
-        <property name="loginUrl" value="/login.jsp" />
+        <!--<property name="loginUrl" value="/login.jsp" />-->
         <!--
             它只是做为一种附加配置，只有session中没有用户请求地址时才会使用 successUrl。系统默认的是认证成功后跳转到上
             一次请求的路径，如果是首次请求，那shiro就会跳转到默认虚拟路径“/”，也就是跳转到index.jsp。
@@ -92,7 +89,8 @@
         -->
         <!--<property name="successUrl" value="/welcome" />-->
         <!-- 权限认证失败，则跳转到指定页面 -->
-        <property name="unauthorizedUrl" value="/wrongperson.jsp" />
+        <!--<property name="unauthorizedUrl" value="/wrongperson.jsp" />-->
+
         <!-- shiro 连接约束配置，即过滤链的定义 -->
         <property name="filterChainDefinitionMap" ref="filterChainMap" />
         <!-- 固定写死的配置，即模拟的数据-->

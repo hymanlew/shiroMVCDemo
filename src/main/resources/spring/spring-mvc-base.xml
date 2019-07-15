@@ -217,7 +217,7 @@
         </property>
     </bean>
 
-    <!-- 用于自主的来调用配置在 Spring IOC 容器中 shiro bean 的生命周期方法。必须在 spring-mvc 中配置 -->
+    <!-- 用于自主的来调用配置在 Spring IOC 容器中 shiro bean 的生命周期方法 -->
     <bean id="lifecycle" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>
     <!-- 开启 shiro 注解，基于 AOP -->
     <bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator" depends-on="lifecycle">
@@ -232,6 +232,11 @@
     </bean>
     <bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
         <property name="securityManager" ref="securiManager"/>
+    </bean>
+
+    <!-- 使用 spring-session -->
+    <bean id="redisHttpSessionConfiguration" class="org.springframework.session.data.redis.config.annotation.web.http.RedisHttpSessionConfiguration">
+        <property name="maxInactiveIntervalInSeconds" value="3600" />
     </bean>
 
     <!-- 未认证或未授权时跳转必须在springmvc里面配 -->

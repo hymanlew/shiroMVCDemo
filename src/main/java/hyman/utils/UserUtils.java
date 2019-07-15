@@ -9,4 +9,9 @@ public class UserUtils {
         User user = (User) SecurityUtils.getSubject().getPrincipal();
         return user.getId().toString();
     }
+
+    public static String getCurrentSessionAttr(){
+        String id = SecurityUtils.getSubject().getSession().getAttribute("identityId").toString();
+        return id;
+    }
 }

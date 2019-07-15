@@ -19,20 +19,27 @@ import java.io.Serializable;
  * SessionDao：
  * • AbstractSessionDAO 提供了SessionDAO的基础实现，如生成会话ID等
  * • CachingSessionDAO 提供了对开发者透明的会话缓存的功能，需要设置相应的CacheManager
- * • MemorySessionDAO 直接在内存中进行会话维护
+ * • MemorySessionDAO 直接在内存中进行会话维护（默认的）
  * • EnterpriseCacheSessionDAO 提供了缓存功能的会话维护，默认情况下使用MapCache实现，内部使用ConcurrentHashMap保存缓存的会话。
+ *
+ * 但是要注意：
+ * SecurityUtils.getSubject() 是每个请求创建一个Subject，但其内部经过 AbstractShiroFilter 转换为同一个 Subject，但是不同的
+ * 客户端还是会生成不同的 Subject，即每次 getsession 都会不同, Subject 生成后并保存到 ThreadContext的 resources
+ * （ThreadLocal<Map<Object, Object>>）变量中，也就是一个 http 请求一个 subject，并绑定到当前线程。
+ *
+ * 如此每个不同的客户端都会生成不同的 session，也就不能实现单点登录。如果只是将 session 存入到 redis 中，倒不如直接使用
+ * SpringSession（SpringHttpSessionConfiguration），因为 Spring Session 就是用 Redis来实现的。
  */
 public class MySessionDao extends EnterpriseCacheSessionDAO{
     /**
-     * 之所以要重写 sessionDao，是因为在父类或抽象类中只提供了一些抽象方法或是接口，而没有实现具体的业务。
-     * 但此 sessiondao 是项目启动后就开始运行了。
+     * 此 sessiondao 是项目启动后就开始运行了。
      */
     @Resource(name="sqlSessionTemplate")
     private SqlSessionTemplate sqlSessionTemplate;
 
     @Override
     protected Serializable doCreate(Session session) {
-        // 生成session的id，是序列化处理之后生成的，只需要调用一次即可。 重复调用会生成不同的 id。
+        // 生成session的id，是序列化处理之后生成的，只需要调用一次即可。重复调用会生成不同的 id。
         Serializable sessionId = generateSessionId(session);
         // 给Session设定id
         assignSessionId(session, sessionId);

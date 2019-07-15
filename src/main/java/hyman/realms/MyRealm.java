@@ -70,7 +70,7 @@ public class MyRealm extends AuthorizingRealm{
         }
         info.setStringPermissions(set);
 
-        info.setStringPermissions(findPermissions());
+        //info.setStringPermissions(findPermissions());
         return info;
     }
 
@@ -95,6 +95,10 @@ public class MyRealm extends AuthorizingRealm{
         }
     }
 
+    public void clearUserCache() {
+        PrincipalCollection principals = SecurityUtils.getSubject().getPrincipals();
+       super.clearCache(principals);
+    }
     /**
      * 鏉冮檺鍒楄〃
      */
@@ -204,13 +208,13 @@ public class MyRealm extends AuthorizingRealm{
     public  boolean isPermitted(PrincipalCollection principals, String permission){
         return isAdmin() ||super.isPermitted(principals,permission);
     }
-	
-	/*
+
+    /*
 	 * 閫氳繃瑙掕壊杩囨护鏉冮檺 瓒呯骇绠＄悊鍛�
 	 * @Override
-	public boolean hasRole(PrincipalCollection principals, String roleIdentifier) {
+    public boolean hasRole(PrincipalCollection principals, String roleIdentifier) {
 	    return isAdmin()  || super.hasRole(principals, roleIdentifier);
-	}*/
+    }*/
 
     // 濡傛灉鏄鐞嗗憳鎷ユ湁鎵�鏈夌殑璁块棶鏉冮檺
     private boolean isAdmin() {
