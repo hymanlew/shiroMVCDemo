@@ -1,97 +1,82 @@
 package hyman.controller;
 
-import hyman.entity.User;
-import hyman.realms.MyRealm;
-import hyman.service.UserService;
-import hyman.utils.CacheUtil;
-import org.apache.shiro.SecurityUtils;
-import org.apache.shiro.authc.UsernamePasswordToken;
-import org.apache.shiro.session.Session;
-import org.apache.shiro.subject.Subject;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
-import hyman.utils.CryptograpUtil;
-
-import javax.annotation.Resource;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
+import org.springframework.web.servlet.ModelAndView;
 
 @Controller
-@RequestMapping("/")
+@RequestMapping("/auth")
 public class AuthController {
 
-    @Resource
-    private MyRealm myRealm;
-    @Resource(name = "service")
-    private UserService userService;
+    @RequestMapping("/admin")
+    public void admin(){
+        System.out.println("===== admin ======");
+    }
+
+    @RequestMapping("/teach")
+    public void teach(){
+        System.out.println("===== teach ======");
+    }
+
+    @RequestMapping("/stud")
+    public void stud(){
+        System.out.println("===== stud ======");
+    }
 
     /**
-     * 配置shiro注解模式：
-     * @RequiresAuthentication： 验证用户是否登录，等同于方法subject.isAuthenticated() 结果为true时。
+     * spring mvc处理方法支持如下的返回方式：ModelAndView, Model, ModelMap, Map,View, String, void
+     *
+     * 通过ModelAndView构造方法可以指定返回的页面名称，也可以通过setViewName()方法跳转到指定的页面 , 使用 addObject() 设置
+     * 需要返回的值，addObject()有几个不同参数的方法，可以默认和指定返回对象的名字。 调用 addObject()方法将值设置到一个名为
+     * ModelMap的类属性，ModelMap是LinkedHashMap的子类， 具体请看类。
+     *
+     * Model 是一个接口， 其实现类为ExtendedModelMap，继承了ModelMap类。
+     * ModelAndView：使用它可以返回任意类型对象（测试）。
+     *
+     * 并且可以把对象，put 入获取的Map对象中，传到对应的视图： map.put("user",user);  return "view";
+     */
+    @RequestMapping("/user")
+    public ModelAndView user(){
+        System.out.println("===== 只要登录成功就可访问！ ======");
+        ModelAndView view = new ModelAndView("DemoTest");
+        return view;
+    }
+
+    /**
+     * 1.使用 String 作为请求处理方法的返回值类型是比较通用的方法，这样返回的逻辑视图名不会和请求 URL 绑定，具有很大的灵活性，
+     * 而模型数据又可以通过 ModelMap 控制。
+     * 2.使用void,map,Model 时，返回对应的逻辑视图名称真实url为：prefix前缀+视图名称 +suffix后缀组成。
+     * 3.使用String,ModelAndView返回视图名称可以不受请求的url绑定，ModelAndView可以设置返回的视图名称。
+     *
+     * 不能使用 ajax 方式进行访问，否则不能正常返回页面。
+     */
+    @RequestMapping("/model")
+    public ModelAndView model(){
+        System.out.println("===== 只要登录成功就可访问！ ======");
+        //ModelAndView view = new ModelAndView("forward:DemoTest"); 会转发到对应到 controller 路径
+        //ModelAndView view = new ModelAndView("redirect:/WEB-INF/jsp/DemoTest.jsp"); 会重定向失败
+        ModelAndView view = new ModelAndView("DemoTest");
+        return view;
+    }
+
+    /**
+     * 注解式授权（事先也已经在）：
+     *
+     * @RequiresAuthentication： 要求当前 subject 已经在当前的 session中被验证通过才能被访问和调用。
+     *              即：SecurityUtils.getSubject().isAuthenticated()。
+     *
+     * @RequiresGuest： 要求当前的 subject是一个‘guest’，即他们必须是在之前的 session中没有被验证或被记住才能被访问或调用。
+     *              与@ RequiresUser完全相反。即 RequiresUser  == ! RequiresGuest，Subject().getPrincipals() = null。
+     *
+     * @RequiresPermissions("user:select")： 要求当前的 subject拥有相关权限才能访问。否则抛出异常 AuthorizationException。
+     *              一个权限（user:select）,多个权限（value = {"11","22"}）。
+     *
+     * @RequiresRoles("hyman") 要求当前登录的主体拥有相关的角色才能访问。如果没有，则会抛 AuthorizationException 异常。
+     *              多个角色（value = {"hyman","test"}）。
      *
      * @RequiresUser： 验证用户是否被记忆，user有两种含义：
      *      一种是成功登录的（subject.isAuthenticated() 结果为true）；
      *      另外一种是被记忆的（subject.isRemembered() 结果为true）。
      *
-     * @RequiresGuest： 验证是否是一个guest的请求，与@ RequiresUser完全相反。
-     *      换言之，RequiresUser  == ! RequiresGuest 。此时subject.getPrincipal() 结果为null。
-     *
-     * @RequiresRoles("aRoleName")： 如果subject中有 aRoleName角色才可以访问该方法。如果没有这个权限则会抛出异常 AuthorizationException。
-     *
-     * @RequiresPermissions({"file:read","write:aFile.txt"})： 要求 subject中必须同时含有 file:read和 write:aFile.txt的权
-     *      限才能执行方法someMethod()。否则抛出异常 AuthorizationException。
-     *
      */
-
-    @RequestMapping({"/","/index"})
-    public String toIndex(){
-        return "redirect:/index.jsp";
-    }
-
-    @RequestMapping("/login")
-    public String login(HttpServletRequest req, User user) throws ServletException, IOException {
-        System.out.println("Login doPost！");
-
-        // 默认是根据 web.xml 中的 shiro 配置文件，来得到认证主体。
-        Subject subject = SecurityUtils.getSubject();
-        Session session = subject.getSession();
-        if(subject.isAuthenticated()){
-            return "success";
-        }else {
-            System.out.println("========== 没有登录认证过！要走 login！==========");
-        }
-        UsernamePasswordToken token = new UsernamePasswordToken(user.getName(), CryptograpUtil.md5(user.getPassword(),"hyman"));
-        try {
-            // 记住我功能，默认有效期为一周。不建议使用这个（即 shiro框架自带的），要自己封装 cookie（用原始 js）。
-            if(subject.isRemembered()){
-                System.out.println("已经记住当前用户！");
-            }else {
-                token.setRememberMe(true);
-            }
-
-            // login 方法会调用 realm 进行用户验证，验证成功后即可返回成功页面。但不会去访问具体有什么权限，只有在页面中
-            // 有权限的需求时才会去查询权限（即 success 页面中某种权限的显示）。
-            System.out.println(token.getPassword());
-            subject.login(token);
-
-            return "success";
-        }catch (Exception e){
-            e.printStackTrace();
-            session.setAttribute("error","用户信息错误！");
-            // 转发
-            return "redirect:/login.jsp";
-        }
-    }
-
-    @RequestMapping("/logout")
-    public String logout(HttpServletRequest req, User user) throws ServletException, IOException {
-
-        // 清空当前用户的缓存信息
-        myRealm.clearUserCache();
-
-        // 直接调用 Subject.logout 即可。
-        SecurityUtils.getSubject().logout();
-        return "redirect:/login.jsp";
-    }
 }

@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 
 public class CookieUtil {
 
+    // 设置有效期为一周
     private static final int COOKIE_MAX_AGE = 7 * 24 * 3600;
 
     public static void removeCookie(HttpServletRequest request, HttpServletResponse response, String name) {
@@ -22,7 +23,9 @@ public class CookieUtil {
             response.addCookie(cookie);
         }
     }
+
     public static Cookie getCookie(HttpServletRequest request, String name) {
+        // 这样便可以获取一个cookie数组
         Cookie[] cookies = request.getCookies();
         if (null == cookies || null == name || name.length() == 0) {
             return null;
@@ -36,9 +39,11 @@ public class CookieUtil {
         }
         return cookie;
     }
+
     public static void setCookie(HttpServletResponse response, String name, String value) {
         setCookie(response, name, value, COOKIE_MAX_AGE);
     }
+
     public static void setCookie(HttpServletResponse response, String name, String value, int maxValue) {
         if (StringUtils.isNotBlank(name) && StringUtils.isNotBlank(value)) {
             Cookie cookie = new Cookie(name, value);

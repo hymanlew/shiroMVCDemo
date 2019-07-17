@@ -72,7 +72,7 @@ http://www.springframework.org/schema/aop/spring-aop-3.2.xsd http://www.springfr
 
 	<!-- Session ID 生成器-->
 	<bean id="sessionIdGenerator" class="org.apache.shiro.session.mgt.eis.JavaUuidSessionIdGenerator" />
-	<bean id="sessionDao" class="hyman.utils.MySessionDao">
+	<bean id="sessionDao" class="hyman.security.MySessionDao">
 		<property name="sessionIdGenerator" ref="sessionIdGenerator" />
 		<!-- 设置Session缓存到Eacehc的名字，默认就是shiro-activeSessionCache，它与 ehcache 中定义的名字必须相同 -->
 		<property name="activeSessionsCacheName" value="shiro-activeSessionCache" />

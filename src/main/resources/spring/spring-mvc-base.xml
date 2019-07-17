@@ -234,6 +234,13 @@
         <property name="securityManager" ref="securiManager"/>
     </bean>
 
+    <!--
+    Tomcat Session 使用 tomcat-redis-session-manager 来集中式管理session，其中一个局限性就是必须使用 tomcat容器。
+    而本项目中的 spring-session 也能实现 session 的集中式管理，并且不局限于某种容器；
+
+    RedisHttpSessionConfiguration 可以简单理解为 spring-session 使用redis来存储 session的功能类，此类本身使用了 @Configuration
+    注解，@Configuration注解相当于把该类作为spring的xml配置文件中的，此类中包含了很多bean对象同样也是注解@Bean；
+    -->
     <!-- 使用 spring-session -->
     <bean id="redisHttpSessionConfiguration" class="org.springframework.session.data.redis.config.annotation.web.http.RedisHttpSessionConfiguration">
         <property name="maxInactiveIntervalInSeconds" value="3600" />

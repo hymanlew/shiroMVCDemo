@@ -3,9 +3,12 @@ package hyman.realms;
 import com.alibaba.druid.util.HttpClientUtils;
 import com.alibaba.fastjson.JSON;
 import hyman.entity.Permission;
+import hyman.entity.ResponseData;
 import hyman.entity.Roles;
 import hyman.entity.User;
+import hyman.security.PermissionService;
 import hyman.service.UserService;
+import hyman.utils.Constant;
 import hyman.utils.UserUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -63,14 +66,16 @@ public class MyRealm extends AuthorizingRealm{
         }
         info.setRoles(set);
 
-        set = new LinkedHashSet();
-        List<Permission> permissionList = userService.getPermis(ids);
-        for(Permission permission : permissionList){
-            set.add(permission.getName());
-        }
-        info.setStringPermissions(set);
+        // 直接查询数据库获取
+        //set = new LinkedHashSet();
+        //List<Permission> permissionList = userService.getPermis(ids);
+        //for(Permission permission : permissionList){
+        //    set.add(permission.getName());
+        //}
+        //info.setStringPermissions(set);
 
-        //info.setStringPermissions(findPermissions());
+        // 封装数据库查询的方法，再进行获取
+        info.setStringPermissions(findPermissions(ids));
         return info;
     }
 
@@ -80,14 +85,20 @@ public class MyRealm extends AuthorizingRealm{
     @Override
     protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token) throws AuthenticationException {
 
+        // 在spring mvc中，为了随时都能取到当前请求的 request 对象，可以通过 RequestContextHolder 的静态方法 getRequestAttributes()
+        // 获取 Request 相关的变量，如 request, response 等。
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        Object userObj = request.getSession().getAttribute("loginUser");
+        if (userObj == null) {
+            throw new UnknownAccountException("代码错误异常 ==== 只能在需要远程 sso 验证时才使用此代码 ====");
+        }
+
         // 接收来自 subject 的用户信息：用户名，密码
         // 需要添加密码 hash 加密验证
         String username = (String)token.getPrincipal();
         User baseUser = userService.getByname(username);
         if(baseUser!=null){
             // 封装认证信息，其内部会自动比对密码是否一致
-            Session session = SecurityUtils.getSubject().getSession();
-            session.setAttribute("userId",baseUser.getId());
             AuthenticationInfo info = new SimpleAuthenticationInfo(baseUser.getName(),baseUser.getPassword(),getName());
             return info;
         }else {
@@ -95,82 +106,51 @@ public class MyRealm extends AuthorizingRealm{
         }
     }
 
-    public void clearUserCache() {
-        PrincipalCollection principals = SecurityUtils.getSubject().getPrincipals();
-       super.clearCache(principals);
-    }
-    /**
-     * 鏉冮檺鍒楄〃
-     */
-    private List<IPermissionService> permissionServices;
-
-
+    // 封装的查询用户权限的实现类 service
+    private List<PermissionService> permissionServices;
 
     @ExceptionHandler
-    protected Set<String> findPermissions() {
+    private Set<String> findPermissions(List<Integer> ids) {
+
+        // 在spring mvc中，为了随时都能取到当前请求的 request 对象，可以通过 RequestContextHolder 的静态方法 getRequestAttributes()
+        // 获取 Request 相关的变量，如 request, response 等。
         HttpServletRequest request=((ServletRequestAttributes)RequestContextHolder.getRequestAttributes()).getRequest();
-        PfAcc pfAcc=new PfAcc();
-        BSysUser bSysUser=new BSysUser();
+
         Set<String> permissions = new HashSet<String>();
         if (permissionServices == null) {
             return permissions;
         }
-        if ("major".equals(Constant.getProperty("app.type", "")) || StringUtils.isEmpty(Constant.getProperty("app.type", ""))) {
-            if("smart".equals(Constant.getProperty("sso.type", ""))){
-                //鏅鸿兘浜烘煡璇㈡暟鎹潈闄�
-                pfAcc = (PfAcc) UserUtils.getCurrentUser();
-                for (IPermissionService permissionService : permissionServices) {
-                    permissions.addAll(permissionService.findPermissionsBySmart(pfAcc,request));
-                }
-            }else{
-                bSysUser = (BSysUser) UserUtils.getCurrentUser();
-                //鏅轰汉鏌ヨ鏁版嵁鏉冮檺
-                for (IPermissionService permissionService : permissionServices) {
-                    permissions.addAll(permissionService.findPermissionsByOffice(bSysUser,request));
-                }
-            }
-        }else if ("frame".equals(Constant.getProperty("app.type", ""))) {
-            String url = Constant.getProperty("permit_url", "")+"?pfId="+RedisTool.getPfId(request)+"&frameType="+Constant.getProperty("frame.type", "")+"&userId="+UserUtils.getCurrentUserId();
-            String result= HttpClientUtils.httpPostRequest(url);
-            try {
-                if (StringUtils.isNotBlank(result)) {
-                    ResponseData data = JSON.parseObject(result, new TypeReference<ResponseData>() {});
-                    if (data.getState()==1) {
-                        String permitJson=JSON.parseObject(data.getData().toString()).get("permits").toString();
-                        List<String> permits=JSON.parseObject(permitJson, new TypeReference< List<String>>() {});
-                        if (CollectionUtils.isNotEmpty(permits)) {
-                            permissions.addAll(permits);
-                        }
-                    }
-                }
-            } catch (JSONException e) {
-                //寮曞叆com.alibaba.fastjson.JSONException寮傚父锛涢亣鍒板紓甯稿垯鎶涘嚭鑷畾涔夊紓甯镐俊鎭�
-                throw new JSONException("JSON鏁版嵁瑙ｆ瀽寮傚父锛氬紓甯哥被--AbstractAuthorizingRealm;寮傚父鏂规硶--findPermissions();");
-            }
+        for (PermissionService permissionService : permissionServices) {
+            permissions.addAll(permissionService.findPermissions(ids));
         }
         return permissions;
     }
 
+    // 单点登录识别参数，认证密码匹配调用方法
     @Override
     protected void assertCredentialsMatch(AuthenticationToken token, AuthenticationInfo info)
             throws AuthenticationException {
+
         try {
-            if (token instanceof DefaultUsernamepasswordToken) {
-                if (StringUtils.isNotBlank(((DefaultUsernamepasswordToken) token).getLoginType())) {
-                    if (!((DefaultUsernamepasswordToken) token).getLoginType().equals("plat")) {
-                        String vc = (String) SecurityUtils.getSubject().getSession()
-                                .getAttribute("login" + token.getPrincipal().toString());
-                        char[] pwd = ((DefaultUsernamepasswordToken) token).getPassword();
-                        String pwdStr = new String(pwd);
-                        if (StringUtils.isBlank(vc) || !vc.equals(pwdStr)) {
-                            String msg = "Submitted credentials for token [" + token
-                                    + "] did not match the expected credentials.";
-                            throw new IncorrectCredentialsException(msg);
-                        } else {
-                            SecurityUtils.getSubject().getSession()
-                                    .removeAttribute("login" + token.getPrincipal().toString());
-                        }
-                    }
+            // 如果有特殊的密码或是属性验证需要，则可以自定义验证流程。如果没有就可以不需要这些代码，只执行默认的验证方法即可
+            // （但是我们也自定义了 HashedCredentialsMatcher 代替 shiro 默认的）。
+            if (token instanceof UsernamePasswordToken) {
+                if (StringUtils.isNotBlank(((UsernamePasswordToken) token).getUsername())) {
+
+                    String vc = (String) SecurityUtils.getSubject().getSession()
+                            .getAttribute("login" + token.getPrincipal().toString());
+
+                    char[] pwd = ((UsernamePasswordToken) token).getPassword();
+                    String pwdStr = new String(pwd);
+
+                    //if (StringUtils.isBlank(vc) || !vc.equals(pwdStr)) {
+                    //    String msg = "Submitted credentials for token [" + token + "] did not match the expected credentials.";
+                    //    throw new IncorrectCredentialsException(msg);
+                    //} else {
+                    //    SecurityUtils.getSubject().getSession().removeAttribute("login" + token.getPrincipal().toString());
+                    //}
+                    super.assertCredentialsMatch(token, info);
+
                 } else {
                     super.assertCredentialsMatch(token, info);
                 }
@@ -179,55 +159,21 @@ public class MyRealm extends AuthorizingRealm{
             }
         } catch (IncorrectCredentialsException e) {
             LOGGER.debug(e.getMessage());
-            throw new IncorrectCredentialsException("鎺堟潈璁よ瘉澶辫触");
+            throw new IncorrectCredentialsException(e.getMessage());
         }
     }
 
-    @Override
-    protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token) throws AuthenticationException {
-        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes())
-                .getRequest();
-        Object userObj = request.getSession().getAttribute("loginUser");
-        if (userObj == null) {
-            throw new UnknownAccountException("鏈煡璐︽埛"); // 娌℃壘鍒板笎鍙�
-        }
-        //鑾峰彇鐧诲綍鐢ㄦ埛id
-        String userId = SsoUtils.ssoType.equals(SsoUtils.smartType)?((PfAcc)userObj).getId():((BSysUser)userObj).getUserId();
-        //鑾峰彇鐧诲綍鐢ㄦ埛瀵嗙爜
-        String password = SsoUtils.ssoType.equals(SsoUtils.smartType)?((PfAcc)userObj).getPassword():((BSysUser)userObj).getPassword();
-
-        SimpleAuthenticationInfo authenticationInfo = new SimpleAuthenticationInfo(new Principal(userObj), // 鐢ㄦ埛鍚�
-                password, // 瀵嗙爜
-                new RedisSimpleByteSource(userId), getName() // realm
-                // name
-        );
-        return authenticationInfo;
-    }
-    //杩囨护瓒呯骇绠＄悊鍛樻潈闄�
-    @Override
-    public  boolean isPermitted(PrincipalCollection principals, String permission){
-        return isAdmin() ||super.isPermitted(principals,permission);
+    // 清除 ehcache 缓存
+    public void clearUserCache() {
+        PrincipalCollection principals = SecurityUtils.getSubject().getPrincipals();
+        super.clearCache(principals);
     }
 
-    /*
-	 * 閫氳繃瑙掕壊杩囨护鏉冮檺 瓒呯骇绠＄悊鍛�
-	 * @Override
-    public boolean hasRole(PrincipalCollection principals, String roleIdentifier) {
-	    return isAdmin()  || super.hasRole(principals, roleIdentifier);
-    }*/
-
-    // 濡傛灉鏄鐞嗗憳鎷ユ湁鎵�鏈夌殑璁块棶鏉冮檺
-    private boolean isAdmin() {
-        HttpServletRequest request=((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-        boolean flag=userService.isAdmin(request);
-        return flag;
-    }
-
-    public List<IPermissionService> getPermissionServices() {
+    public List<PermissionService> getPermissionServices() {
         return permissionServices;
     }
 
-    public void setPermissionServices(List<IPermissionService> permissionServices) {
+    public void setPermissionServices(List<PermissionService> permissionServices) {
         this.permissionServices = permissionServices;
     }
 }

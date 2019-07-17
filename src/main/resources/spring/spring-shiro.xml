@@ -21,8 +21,45 @@
     <!-- 自定义 realm，使用自定义的权限认证 service -->
     <bean id="myRealm" class="hyman.realms.MyRealm">
         <property name="permissionServices">
+            <!--
+            Spring框架 xml配置文件中，复杂类型属性的注入（数组，list，map，properties）：
+
+            <property name="arr">
+                <array>
+                    <value>西施</value>
+                    <value>貂蝉</value>
+                    <value>王昭君</value>
+                    <value>杨玉环</value>
+                </array>
+            </property>
+
+            <property name="list">
+                <list>
+                    <value>汪精卫</value>
+                    <value>周恩来</value>
+                    <value>梅兰芳</value>
+                    <value>张学良</value>
+                </list>
+            </property>
+
+            <property name="map">
+                <map>
+                    <entry key="name" value="swift"></entry>
+                    <entry key="profession" value="programmer"></entry>
+                    <entry key="city" value="beijing"></entry>
+                </map>
+            </property>
+
+            <property name="properties">
+                <props>
+                    <prop key="1">冬天里的一把火</prop>
+                    <prop key="2">逆流成河</prop>
+                    <prop key="3">男儿当自强</prop>
+                </props>
+            </property>
+            -->
             <array>
-                <bean class="com.cme.application.sys.service.impl.PermissionService" />
+                <bean class="hyman.security.PermissionService" />
             </array>
         </property>
         <property name="credentialsMatcher" ref="credentialsMatcher" />
@@ -63,12 +100,12 @@
 
 
     <!-- 自定义登录验证过滤器，redis sso  -->
-    <bean id="authenticateFilter" class="com.hyman.security.filter.AuthenticateFilter">
-        <!--<property name="loginUrl" value="${sso.loginUrl}" />-->
-        <property name="loginUrl" value="/login.jsp" />
+    <bean id="authenticateFilter" class="hyman.security.AuthenticateFilter">
+        <property name="loginUrl" value="${sso.loginUrl}" />
+        <property name="logoutUrl" value="${sso.logoutUrl}" />
     </bean>
     <!-- 自定义设备登录验证过滤器，pc or client  -->
-    <bean id="clientLoginFilter" class="com.hymans.sso.security.filter.ClientLoginFilter"></bean>
+    <bean id="clientLoginFilter" class="hyman.security.ClientLoginFilter"></bean>
 
     <!-- shiro 过滤器，id 名称必须与 web.xml 中配置的 filter-name 一致，否则会启动不了（the JDBC Driver has been forcibly unregistered）  -->
     <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
@@ -117,6 +154,6 @@
 
     <!-- shiro 连接过滤链配置，从数据库动态获取路径及权限，配置一个 bean，它实际上是一个 map，通过实例工厂的方式 -->
     <bean id="filterChainMap" factory-bean="filterChainBuilder" factory-method="buildFilterChainMap" />
-    <bean id="filterChainBuilder" class="hyman.utils.FilterChainMapBuilder" />
+    <bean id="filterChainBuilder" class="hyman.security.FilterChainMapBuilder" />
 
 </beans>

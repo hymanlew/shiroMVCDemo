@@ -1,12 +1,23 @@
 package hyman.security;
 
+import com.alibaba.druid.util.HttpClientUtils;
 import com.alibaba.fastjson.JSONObject;
+import hyman.dao.UserDao;
+import hyman.entity.ResponseData;
 import hyman.entity.User;
+import hyman.interceptor.ApiInterceptor;
 import hyman.utils.Constant;
+import hyman.utils.CookieUtil;
+import hyman.utils.CryptograpUtil;
+import hyman.utils.PropertyUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.subject.Subject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.annotation.Resource;
 import javax.servlet.*;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -18,93 +29,66 @@ import java.util.Map;
 
 public class AuthenticateFilter implements Filter {
 
-    public static final String REDIS_INTERFACE_KEY_PARAM = "cmsInterfaceKeyParam";
+    @Resource
+    private PropertyUtils propertyUtils;
+    private static final Logger LOGGER = LoggerFactory.getLogger(AuthenticateFilter.class);
     private String loginUrl;
+    private String logoutUrl;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
-
     }
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
+            throws IOException, ServletException {
 
-        String cookieDomain = "";
-//		System.out.println(((HttpServletRequest) request).getRequestURI());
-        Cookie[] cookies = ((HttpServletRequest) request).getCookies();// 这样便可以获取一个cookie数组
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if (StringUtils.isNotBlank(cookie.getName())) {
-                    if ("CMEPLAZAUSERID".equals(cookie.getName())) {
-                        cookieDomain = cookie.getValue();
-                        break;
-                    }
-                }
-            }
-        }
+        // 获取 sso 认证的主机地址.
+        String ssoUrl = "";
+        String token = "";
+        User user = (User)SecurityUtils.getSubject().getPrincipal();
+        HttpServletRequest request = (HttpServletRequest) servletRequest;
+        HttpServletResponse response = (HttpServletResponse) servletResponse;
+		System.out.println(request.getRequestURI());
 
-        String sessionCmeplazaUserId = "";
-        if (((HttpServletRequest) request).getSession().getAttribute("CMEPLAZAUSERID") != null) {
-            sessionCmeplazaUserId = ((HttpServletRequest) request).getSession().getAttribute("CMEPLAZAUSERID")
-                    .toString();
+        // 因为在本项目中是在本项目直接认证，所以就不需要远程调用 sso 验证了。
+        Cookie ssocookie = CookieUtil.getCookie(request, "SSOSERVICEURL");
+        if(null != ssocookie) {
+            ssoUrl = ssocookie.getValue();
         }
-        // 如果服务端退出， 则先清除本地缓存
-        if (StringUtils.isBlank(cookieDomain) || !sessionCmeplazaUserId.equals(cookieDomain)) {
-            // 本地登出
-            Subject currentUser = SecurityUtils.getSubject();
-            currentUser.getSession().removeAttribute("loginUser");
-            currentUser.logout();
+        Cookie tokencookie = CookieUtil.getCookie(request, "token");
+        if(null != tokencookie) {
+            token = tokencookie.getValue();
         }
+        ssoUrl = propertyUtils.getPropertiesString("sso.service.url");
 
-        if (SecurityUtils.getSubject().isAuthenticated()) { // 验证通过
-            filterChain.doFilter(request, response);
+        // 如果服务端退出， 则先清除本地缓存再退出
+        if (StringUtils.isBlank(ssoUrl) || !verifyToken(token, user)) {
+            response.sendRedirect(logoutUrl);
+            return;
+        }
+        // 如果验证通过就放行
+        if (SecurityUtils.getSubject().isAuthenticated()) {
+            //令牌组成：sso密钥+用户id，进行md5加密
+            String uid = user.getId().toString();
+            String ssotoken = propertyUtils.getPropertiesString("sso.verify.token").concat(uid);
+            Cookie cookie = new Cookie("token", CryptograpUtil.md5(ssotoken, "hyman"));
+            cookie.setPath("/");
+            response.addCookie(cookie);
+            filterChain.doFilter(request, servletResponse);
         } else {
-            // String servicesUrl = Constant.getProperty("sso.login.callback",
-            // "");
-            boolean flag = true;
-            String interfaceKey = request.getParameter(REDIS_INTERFACE_KEY_PARAM);
-            String interfaceValue = RedisUtil.get(interfaceKey);
-            if (StringUtils.isNotBlank(interfaceKey)) {
-                String checkUrl = Constant.getProperty("anon.interface.check.url", "");
-                Map<String, Object> params = new HashMap<String,Object>();
-                params.put("interfaceKey", interfaceKey);
-                params.put("interfaceValue", interfaceValue);
-                //String json = HttpClientUtils.post(checkUrl, params, 5000);
-                String json = "";
-                JSONObject jsonObject = JSONObject.parseObject(json);
-                if (jsonObject!=null&&jsonObject.getInteger("state") == 1) {
-                    chain.doFilter(request, response);
-                    flag = false;
-                }
-            }
-            if (flag){
-                HttpServletRequest httpRequest = (HttpServletRequest) request;
-                Object obj = httpRequest.getSession().getAttribute("cmePlatform");
-                String url = "";
-                String rootPath = Constant.getProperty("root.path", "");
-                if (null == obj) {
-                    if (Constant.PROXY_IP_NAME.isEmpty()) {
-                        url = httpRequest.getServerName();
-                    } else {
-                        url = httpRequest.getHeader("host");
-                    }
-                } else {
-                    url = obj.toString();
-                }
-//				System.out.println(httpRequest.getRequestURL());
-                String toUrl = httpRequest.getRequestURI();
-                String param = httpRequest.getQueryString();
-                if (StringUtils.isNotBlank(param)) {
-                    toUrl = toUrl + "?" + param;
-                }
-                String serverPort = Constant.getProperty("server.port", "");
-                String servicesUrl = "http://" + url + ((StringUtils.isBlank(serverPort) ? "" : (":" + serverPort)))
-                        + rootPath + Constant.getProperty("sso.login.callback", "");
-                servicesUrl += "?toUrl=" + URLEncoder.encode(toUrl, "UTF-8");
-                ((HttpServletResponse) response)
-                        .sendRedirect(loginUrl + "?servers=" + URLEncoder.encode(servicesUrl, "UTF-8"));
-            }
+            //String toUrl = request.getRequestURI();
+            //String param = request.getQueryString();
+            //if (StringUtils.isNotBlank(param)) {
+            //    toUrl = toUrl + "?" + param;
+            //}
+            //String serverPort = Constant.getProperty("server.port", "");
+            //String servicesUrl = "http://" + url + ((StringUtils.isBlank(serverPort) ? "" : (":" + serverPort)))
+            //        + rootPath + Constant.getProperty("sso.login.callback", "");
+            //servicesUrl += "?toUrl=" + URLEncoder.encode(toUrl, "UTF-8");
+            //response.sendRedirect(loginUrl + "?servers=" + URLEncoder.encode(servicesUrl, "UTF-8"));
 
+            response.sendRedirect(logoutUrl);
         }
     }
 
@@ -113,13 +97,20 @@ public class AuthenticateFilter implements Filter {
 
     }
 
-    public static Principal getPrincipal() {
-        Object obj = SecurityUtils.getSubject().getPrincipal();
-        if (obj == null) {
-            return null;
+    /**
+     * 验证有效性
+     */
+    private Boolean verifyToken(String token, User user) {
+        if(StringUtils.isBlank(token) || null == user){
+            return false;
         }
-        Principal principal = (Principal) obj;
-        return principal;
+        String uid = user.getId().toString();
+        String systoken = propertyUtils.getPropertiesString("sso.verify.token").concat(uid);
+        if (!CryptograpUtil.md5(systoken, "hyman").equals(token)) {
+            LOGGER.error("===== token 无效====");
+            return false;
+        }
+        return true;
     }
 
     public String getLoginUrl() {
@@ -130,43 +121,31 @@ public class AuthenticateFilter implements Filter {
         this.loginUrl = loginUrl;
     }
 
-    /**
-     * 登录结果
-     * @return
-     */
-    @SuppressWarnings("unused")
-    private Boolean loginResult(BSysUser bSysUser, HttpServletRequest request) {
-        ResponseData result = directLogin(bSysUser, request);
-        if (null != result && ResponseState.SUCESS_STATE.getValue().equals(result.getState())) {
-            return true;
-        }
-        return false;
+    public String getLogoutUrl() {
+        return logoutUrl;
     }
 
+    public void setLogoutUrl(String logoutUrl) {
+        this.logoutUrl = logoutUrl;
+    }
+
+
     /**
-     *
      * <p>
      * <b>方法描述：</b><b>后台直接登录方法</b>
      * </p>
-     *
-     * @param username
-     *            用户帐号
-     * @param password
-     *            用户密码
-     * @return ResponseData
      */
     public ResponseData directLogin(User bSysUser, HttpServletRequest request) {
         ResponseData result = new ResponseData(ResponseData.ResponseState.FAILED_STATE);
         try {
-            if (bSysUser != null && StringUtils.isNoneBlank(bSysUser.getUserName(),bSysUser.getPassword())) {
-                DefaultUsernamepasswordToken token = new DefaultUsernamepasswordToken(bSysUser.getUserName(), bSysUser.getPassword(),
+            if (bSysUser != null && StringUtils.isNoneBlank(bSysUser.getName(),bSysUser.getPassword())) {
+                UsernamePasswordToken token = new UsernamePasswordToken(bSysUser.getName(), bSysUser.getPassword(),
                         false, request.getRemoteHost());
-                token.setLoginType("plat");
                 SecurityUtils.getSubject().login(token);
-                SecurityUtils.getSubject().getSession().setAttribute("loginUser", bSysUser);
+                SecurityUtils.getSubject().getSession().setAttribute("loginUser", bSysUser.getId());
                 if (bSysUser != null) {
                     result = new ResponseData(ResponseData.ResponseState.SUCESS_STATE);
-                    result.setMessage("自动登录成功");
+                    result.setMsg("自动登录成功");
                 }
             }
         } catch (Exception e) {

@@ -1,4 +1,4 @@
-package hyman.utils;
+package hyman.security;
 
 import org.springframework.stereotype.Component;
 

@@ -20,8 +20,9 @@ public class MixHashedCredentialsMatcher extends HashedCredentialsMatcher {
         UsernamePasswordToken token = (UsernamePasswordToken) authcToken;
         Object accountCredentials = getCredentials(info);
         String pwd = String.valueOf(token.getPassword());
+
         if (pwd.length() == (OAUTH_PREFIX.length() + 32)) {
-            //取出密码
+            //取出密码，直接 equals 比对字符串
             pwd = pwd.substring(OAUTH_PREFIX.length());
             return equals(Hex.decode(pwd), accountCredentials);
         }

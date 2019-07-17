@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <!--。。。。。-->
+    </bean>
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="configurationProperties">
+            <props>
+                <!-- 打印查询语句 -->
+                <prop key="logImpl">STDOUT_LOGGING</prop>
+                <prop key="mapUnderscoreToCamelCase">true</prop>
+            </props>
+        </property>
+        <property name="mapperLocations" value="classpath*:mybatis/**/mapper/*.xml"/>
+        <property name="typeAliasesPackage" value="com.cme.**.domain"/>
+    </bean>
+
+    <bean class="tk.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.cme.**.mapper"/>
+        <!-- 3.2.2版本新特性，markerInterface可以起到mappers配置的作用，详细情况需要看Marker接口类，自定义数据层基础类，继承 mapper  -->
+        <property name="markerInterface" value="com.cme.application.base.mapper.BaseMapper"/>
+        <!-- 通用Mapper通过属性注入进行配置，默认不配置时会注册Mapper<T>接口 <property name="properties">
+            <value> mappers=tk.mybatis.mapper.common.Mapper </value> </property> -->
+    </bean>
+
+    <!-- SqlSessionTemplate 线程安全，dao 引用时安全。且与 spring 事务相关联，保持一致性 -->
+    <bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate"
+          scope="prototype">
+        <constructor-arg index="0" ref="sqlSessionFactory"/>
+    </bean>
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+</beans>

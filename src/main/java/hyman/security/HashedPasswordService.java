@@ -6,7 +6,7 @@ import org.apache.shiro.crypto.hash.SimpleHash;
 import org.apache.shiro.util.ByteSource;
 import org.apache.shiro.util.StringUtils;
 
-// 用户密码业务层
+// 用户密码加密业务层
 public class HashedPasswordService {
 
     /**

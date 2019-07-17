@@ -1,6 +1,7 @@
-package hyman.utils;
+package hyman.security;
 
 import hyman.entity.Sessions;
+import hyman.utils.SerializableUtils;
 import org.apache.shiro.session.Session;
 import org.apache.shiro.session.mgt.ValidatingSession;
 import org.apache.shiro.session.mgt.eis.EnterpriseCacheSessionDAO;
