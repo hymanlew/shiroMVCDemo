@@ -1,24 +1,40 @@
-package hyman.utils;
+package hyman.config;
 
 import freemarker.core.Environment;
 import freemarker.template.*;
-import hyman.config.CustomException;
-import org.apache.commons.lang3.StringUtils;
+import hyman.utils.DateTypeEditor;
+import hyman.utils.StringUtils;
 import org.springframework.web.servlet.support.RequestContext;
 import org.springframework.web.servlet.view.AbstractTemplateView;
 
 import java.util.*;
 
-// Freemarker标签工具类
-public abstract class DirectiveUtils {
+// <p><b>类描述：</b>Freemarker标签工具类</p>
+public abstract class AbstractDirectiveUtils {
 
+    /**
+     * 输出参数：对象数据
+     */
     public static final String OUT_BEAN = "tag_bean";
-
+    /**
+     * 输出参数：列表数据
+     */
     public static final String OUT_LIST = "tag_list";
-
+    /**
+     * 输出参数：分页数据
+     */
     public static final String OUT_PAGINATION = "tag_pagination";
 
-    public static Map<String, TemplateModel> addParamsToVariable(Environment env, Map<String, TemplateModel> params) throws TemplateException {
+    /**
+     * 将params的值复制到variable中
+     *
+     * @param env Environment
+     * @param params 参数map
+     * @throws TemplateException 参数名称
+     * @return 原Variable中的值
+     */
+    public static Map<String, TemplateModel> addParamsToVariable(Environment env, Map<String, TemplateModel> params)
+            throws TemplateException {
         Map<String, TemplateModel> origMap = new HashMap<String, TemplateModel>();
         if (params.size() <= 0) {
             return origMap;
@@ -37,8 +53,16 @@ public abstract class DirectiveUtils {
         return origMap;
     }
 
-    public static void removeParamsFromVariable(Environment env, Map<String, TemplateModel> params, Map<String, TemplateModel> origMap)
-            throws TemplateException {
+    /**
+     * 将variable中的params值移除
+     *
+     * @param env Environment
+     * @param params 参数map
+     * @param origMap 参数map
+     * @throws TemplateException 模板异常
+     */
+    public static void removeParamsFromVariable(Environment env, Map<String, TemplateModel> params,
+                                                Map<String, TemplateModel> origMap) throws TemplateException {
         if (params.size() <= 0) {
             return;
         }
@@ -47,15 +71,33 @@ public abstract class DirectiveUtils {
         }
     }
 
+    /**
+     * 获得RequestContext
+     *
+     * ViewResolver中的exposeSpringMacroHelpers必须为true
+     *
+     * @param env Freemarker Environment
+     * @throws TemplateException 模板异常
+     * @return RequestContext
+     */
     public static RequestContext getContext(Environment env) throws TemplateException {
         TemplateModel ctx = env.getGlobalVariable(AbstractTemplateView.SPRING_MACRO_REQUEST_CONTEXT_ATTRIBUTE);
         if (ctx instanceof AdapterTemplateModel) {
             return (RequestContext) ((AdapterTemplateModel) ctx).getAdaptedObject(RequestContext.class);
         } else {
-            throw new TemplateModelException("RequestContext '" + AbstractTemplateView.SPRING_MACRO_REQUEST_CONTEXT_ATTRIBUTE + "' not found in DataModel.");
+            throw new TemplateModelException(
+                    "RequestContext '" + AbstractTemplateView.SPRING_MACRO_REQUEST_CONTEXT_ATTRIBUTE + "' not found in DataModel.");
         }
     }
 
+    /**
+     *
+     * <p><b>方法描述：</b>获取字符串类型值</p>
+     * @param name 参数名称
+     * @param params 参数map
+     * @return String
+     * @throws TemplateException 模板异常
+     */
     public static String getString(String name, Map<String, TemplateModel> params) throws TemplateException {
         TemplateModel model = params.get(name);
         if (model == null) {
@@ -70,6 +112,14 @@ public abstract class DirectiveUtils {
         }
     }
 
+    /**
+     *
+     * <p><b>方法描述：</b>获取长整型值</p>
+     * @param name 参数名称
+     * @param params 参数map
+     * @return Long
+     * @throws TemplateException 模板异常
+     */
     public static Long getLong(String name, Map<String, TemplateModel> params) throws TemplateException {
         TemplateModel model = params.get(name);
         if (model == null) {
@@ -92,6 +142,14 @@ public abstract class DirectiveUtils {
         }
     }
 
+    /**
+     *
+     * <p><b>方法描述：</b>获取整型值</p>
+     * @param name 参数名称
+     * @param params 参数map
+     * @return Integer值
+     * @throws TemplateException 模板异常
+     */
     public static Integer getInt(String name, Map<String, TemplateModel> params) throws TemplateException {
         TemplateModel model = params.get(name);
         if (model == null) {
@@ -114,8 +172,16 @@ public abstract class DirectiveUtils {
         }
     }
 
+    /**
+     *
+     * <p><b>方法描述：</b>获取整型数组</p>
+     * @param name 参数名称
+     * @param params 参数map
+     * @return Integer[]
+     * @throws TemplateException 模板异常
+     */
     public static Integer[] getIntArray(String name, Map<String, TemplateModel> params) throws TemplateException {
-        String str = DirectiveUtils.getString(name, params);
+        String str = AbstractDirectiveUtils.getString(name, params);
         if (StringUtils.isBlank(str)) {
             return null;
         }
@@ -128,10 +194,18 @@ public abstract class DirectiveUtils {
             }
             return ids;
         } catch (NumberFormatException e) {
-            throw new CustomException(name + e.getMessage());
+            throw new CustomException(e.getMessage());
         }
     }
 
+    /**
+     *
+     * <p><b>方法描述：</b>获取布尔类型值</p>
+     * @param name 参数名称
+     * @param params 参数map
+     * @return Boolean类型值
+     * @throws TemplateException 模板异常
+     */
     public static Boolean getBool(String name, Map<String, TemplateModel> params) throws TemplateException {
         TemplateModel model = params.get(name);
         if (model == null) {
@@ -143,7 +217,7 @@ public abstract class DirectiveUtils {
             return !(((TemplateNumberModel) model).getAsNumber().intValue() == 0);
         } else if (model instanceof TemplateScalarModel) {
             String s = ((TemplateScalarModel) model).getAsString();
-            // 绌轰覆搴旇杩斿洖null杩樻槸true鍛紵
+            // 空串应该返回null还是true呢？
             if (!StringUtils.isBlank(s)) {
                 return !(s.equals("0") || s.equalsIgnoreCase("false") || s.equalsIgnoreCase("f"));
             } else {
@@ -154,6 +228,14 @@ public abstract class DirectiveUtils {
         }
     }
 
+    /**
+     *
+     * <p><b>方法描述：</b>获取日期类型值</p>
+     * @param name 参数名称
+     * @param params 参数map
+     * @return Date Date类型数据
+     * @throws TemplateException 模板异常
+     */
     public static Date getDate(String name, Map<String, TemplateModel> params) throws TemplateException {
         TemplateModel model = params.get(name);
         if (model == null) {
@@ -170,19 +252,24 @@ public abstract class DirectiveUtils {
         }
     }
 
-        public static Set<String> getKeysByPrefix (String prefix, Map < String, TemplateModel > params){
-            Set<String> keys = params.keySet();
-            Set<String> startWithPrefixKeys = new HashSet<String>();
-            if (keys == null) {
-                return null;
-            }
-            for (String key : keys) {
-                if (key.startsWith(prefix)) {
-                    startWithPrefixKeys.add(key);
-                }
-            }
-            //return startWithPrefixKeys;
+    /**
+     *
+     * <p><b>方法描述：</b>获取keys</p>
+     * @param prefix 前缀
+     * @param params 参数
+     * @return Set
+     */
+    public static Set<String> getKeysByPrefix(String prefix, Map<String, TemplateModel> params) {
+        Set<String> keys = params.keySet();
+        Set<String> startWithPrefixKeys = new HashSet<String>();
+        if (keys == null) {
             return null;
         }
-
+        for (String key : keys) {
+            if (key.startsWith(prefix)) {
+                startWithPrefixKeys.add(key);
+            }
+        }
+        return startWithPrefixKeys;
+    }
 }

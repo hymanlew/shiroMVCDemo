@@ -321,4 +321,7 @@ public class HttpUtil {
             e.printStackTrace();
         }
     }
+
+    public static void post(String dataMonitorUrl, Map<String, Object> param, int i) {
+    }
 }

@@ -93,6 +93,33 @@
           <version>1.7.7</version>
       </dependency>
 
+      <!-- log4j2 日志插件 -->
+      <dependency>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-api</artifactId>
+          <version>2.11.1</version>
+      </dependency>
+
+      <dependency>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-core</artifactId>
+          <version>2.11.1</version>
+      </dependency>
+
+      <!--
+log4j -> log4j2 桥接
+去掉 log4j 1.x jar，添加log4j-1.2-api.jar，配合 log4j-api-2.x.x.jar 和 log4j-core-2.x.x.jar 即可，依赖如下
+https://www.jianshu.com/p/d7b0e981868d
+
+
+      -->
+      <!--用于与slf4j保持桥接 -->
+      <dependency>
+          <groupId>org.apache.logging.log4j</groupId>
+          <artifactId>log4j-slf4j-impl</artifactId>
+          <version>2.11.1</version>
+      </dependency>
+
       <!-- mysql jar-->
       <dependency>
           <groupId>mysql</groupId>

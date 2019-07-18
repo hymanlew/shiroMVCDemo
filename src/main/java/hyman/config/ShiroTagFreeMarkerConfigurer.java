@@ -6,6 +6,7 @@ import org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer;
 
 import java.io.IOException;
 
+// shiro权限标签配置类
 public class ShiroTagFreeMarkerConfigurer  extends FreeMarkerConfigurer {
 
     @Override
