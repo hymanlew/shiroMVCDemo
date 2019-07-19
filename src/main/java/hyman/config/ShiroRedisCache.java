@@ -41,6 +41,7 @@ public class ShiroRedisCache<K, V> implements Cache<K, V> {
      * @return V 泛型对象
      * @throws CacheException 缓存操作异常
      */
+    @Override
     public V get(K key) throws CacheException {
         if (key == null) {
             return null;
@@ -57,6 +58,7 @@ public class ShiroRedisCache<K, V> implements Cache<K, V> {
      * @return V 值
      * @throws CacheException 缓存操作异常
      */
+    @Override
     public V put(K key, V value) throws CacheException {
         if (key == null || value == null) {
             return null;
@@ -73,6 +75,7 @@ public class ShiroRedisCache<K, V> implements Cache<K, V> {
      * @return V 值
      * @throws CacheException 缓存操作异常
      */
+    @Override
     public V remove(K key) throws CacheException {
         if (key == null) {
             return null;
@@ -89,6 +92,7 @@ public class ShiroRedisCache<K, V> implements Cache<K, V> {
      * 清除缓存
      * @throws CacheException 缓存操作异常
      */
+    @Override
     public void clear() throws CacheException {
         redisTemplate.getConnectionFactory().getConnection().flushDb();
     }
@@ -97,6 +101,7 @@ public class ShiroRedisCache<K, V> implements Cache<K, V> {
      * 获取链接数
      * @return 链接数
      */
+    @Override
     public int size() {
         Long len = redisTemplate.getConnectionFactory().getConnection().dbSize();
         return len.intValue();
@@ -149,7 +154,7 @@ public class ShiroRedisCache<K, V> implements Cache<K, V> {
             String preKey = this.prefix + key;
             return preKey.getBytes();
         } else {
-            return SerializeUtils.protoSerialize(key);
+            return SerializeUtils.serialize(key);
         }
     }
 

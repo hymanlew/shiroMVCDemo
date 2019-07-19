@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+     http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+     http://www.springframework.org/schema/beans
+     http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+     http://www.springframework.org/schema/rabbit
+     http://www.springframework.org/schema/rabbit/spring-rabbit-1.0.xsd
+     http://www.springframework.org/schema/context
+     http://www.springframework.org/schema/context/spring-context.xsd
+     http://www.springframework.org/schema/aop
+     http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+    <!-- 启动@aspectj的自动代理支持-->
+    <aop:aspectj-autoproxy proxy-target-class="true" />
+    <bean id="cmeLogAop" class="hyman.aop.CmeLogAop" />
+
+    <!--配置connection-factory，指定连接rabbit server参数 -->
+    <rabbit:connection-factory id="connectionFactory"
+                               username="cloud-dev" password="cloud-dev" host="${rabbitmq.host}" port="5672" virtual-host="/" />
+
+    <!--定义json数据解析 -->
+    <bean id="jsonMessageConverter" class="org.springframework.amqp.support.converter.Jackson2JsonMessageConverter"></bean>
+    <!--定义rabbit template用于数据的接收和发送 -->
+    <rabbit:template id="amqpTemplate" connection-factory="connectionFactory"  exchange="logExchange" message-converter="jsonMessageConverter" />
+
+    <!--通过指定下面的admin信息，当前producer中的exchange和queue会在rabbitmq服务器上自动生成 -->
+    <rabbit:admin connection-factory="connectionFactory" />
+
+    <!--定义queue -->
+    <rabbit:queue name="logQueue" durable="true" auto-delete="false" exclusive="false" />
+
+    <!-- 定义topic exchange，绑定queueTest -->
+    <rabbit:topic-exchange name="logExchange" durable="true" auto-delete="false">
+        <rabbit:bindings>
+            <rabbit:binding  queue="logQueue" pattern="*" />
+        </rabbit:bindings>
+    </rabbit:topic-exchange>
+
+</beans>

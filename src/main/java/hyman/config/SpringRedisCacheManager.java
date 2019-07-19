@@ -1,5 +1,6 @@
 package hyman.config;
 
+import hyman.aop.CmeSystemLog;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.cache.annotation.CacheConfig;
@@ -10,8 +11,13 @@ import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.util.ReflectionUtils;
 
+import static org.springframework.core.annotation.AnnotationUtils.findAnnotation;
+import static org.springframework.util.StringUtils.isEmpty;
+
 import java.lang.reflect.Method;
+import java.security.Provider;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -38,7 +44,7 @@ public class SpringRedisCacheManager extends RedisCacheManager implements Applic
         String[] beanNames = applicationContext.getBeanNamesForType(Object.class);
         for (String beanName : beanNames) {
             final Class<?> clazz = applicationContext.getType(beanName);
-            Service service = findAnnotation(clazz, Service.class);
+            CmeSystemLog service = findAnnotation(clazz, CmeSystemLog.class);
             if (null == service) {
                 continue;
             }
@@ -91,6 +97,17 @@ public class SpringRedisCacheManager extends RedisCacheManager implements Applic
     }
 
     private Set<String> findCacheNames(CacheConfig cacheConfig, Cacheable cacheable) {
-        return isEmpty(cacheable.value()) ? newHashSet(cacheConfig.cacheNames()) : newHashSet(cacheable.value());
+
+        Set<String> nameset = new HashSet<>();
+        for(String name : cacheConfig.cacheNames()){
+            nameset.add(name);
+        }
+
+        Set<String> valueset = new HashSet<>();
+        for(String value : cacheable.value()){
+            valueset.add(value);
+        }
+
+        return isEmpty(cacheable.value()) ? nameset : valueset;
     }
 }
