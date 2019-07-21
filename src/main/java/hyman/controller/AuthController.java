@@ -3,6 +3,7 @@ package hyman.controller;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.view.RedirectView;
 
 @Controller
 @RequestMapping("/auth")
@@ -53,6 +54,12 @@ public class AuthController {
     @RequestMapping("/model")
     public ModelAndView model(){
         System.out.println("===== 只要登录成功就可访问！ ======");
+
+        // 两种重定向的方式，并传递参数列表
+        //return "redirect:/login.jsp";
+        //return new ModelAndView("/login.jsp");
+        //return new ModelAndView(new RedirectView("/login.jsp"), new HashMap<>());
+
         //ModelAndView view = new ModelAndView("forward:DemoTest"); 会转发到对应到 controller 路径
         //ModelAndView view = new ModelAndView("redirect:/WEB-INF/jsp/DemoTest.jsp"); 会重定向失败
         ModelAndView view = new ModelAndView("DemoTest");

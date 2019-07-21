@@ -27,6 +27,7 @@ public class Reflections {
     public static Object invokeGetter(Object obj, String propertyName) {
         Object object = obj;
         for (String name : StringUtils.split(propertyName, ".")) {
+            // 首字母大写
             String getterMethodName = GETTER_PREFIX + StringUtils.capitalize(name);
             object = invokeMethod(object, getterMethodName, new Class[] {}, new Object[] {});
         }

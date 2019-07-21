@@ -4,8 +4,10 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import hyman.entity.User;
 import hyman.realms.MyRealm;
+import hyman.security.HashedPasswordService;
 import hyman.service.UserService;
 import hyman.utils.*;
+import moreway.redis.RedisUtil;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.session.Session;
@@ -17,7 +19,6 @@ import org.springframework.web.servlet.view.RedirectView;
 
 import javax.annotation.Resource;
 import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -29,10 +30,16 @@ public class LoginController {
 
     @Resource
     private MyRealm myRealm;
+
     @Resource(name = "service")
     private UserService userService;
+
     @Resource
     private PropertyUtils propertyUtils;
+
+    @Resource
+    private HashedPasswordService passwordService;
+
 
     @RequestMapping({"/","/index"})
     public String toIndex(){
@@ -58,6 +65,14 @@ public class LoginController {
         }else {
             System.out.println("========== 没有登录认证过！要走 login！==========");
         }
+
+        String password = passwordService.encryptPassword(user);
+        if(StringUtils.isBlank(password)){
+            session.setAttribute("error","用户信息错误！");
+            return "redirect:/login.jsp";
+        }
+        //UsernamePasswordToken token = new UsernamePasswordToken(user.getName(), password,"");
+
         UsernamePasswordToken token = new UsernamePasswordToken(user.getName(), CryptograpUtil.md5(user.getPassword(),"hyman"));
         try {
             // 记住我功能，默认有效期为一周。不建议使用这个（即 shiro框架自带的），要自己封装 cookie（用原始 js）。
@@ -74,12 +89,12 @@ public class LoginController {
 
             // 存入 redis，session，cookie
             //将用户信息存入session，供本地存储用户cookie使用，注意该session不是项目内的session
-            req.getSession().setAttribute("loginUser", user);
+            user = (User) subject.getPrincipal();
+            req.getSession().setAttribute("loginUser", user.getId());
 
             //将用户信息存入session
-            SecurityUtils.getSubject().getSession().setAttribute("loginUser", user);
+            //session.setAttribute("loginUser",user.getId());
 
-            session.setAttribute("loginUser",user.getId());
             String ssotoken = propertyUtils.getPropertiesString("sso.verify.token").concat(user.getId().toString());
             CookieUtil.setCookie(response,"token", CryptograpUtil.md5(ssotoken, "hyman"));
             return "success";
@@ -128,4 +143,28 @@ public class LoginController {
     public void setMyRealm(MyRealm myRealm) {
         User user = JSON.parseObject("", new TypeReference<User>() {});
     }
+
+    /**
+     * jsp 的本质是 servlet，只有在 servlet中调用 request.getSession() 或者 request.getSession(true)，服务器才会产生session。
+     * 如果调用 request.getSession(false)，将不会产生session。那么为什么jsp会产生session。
+     * 可以看到在 index.jsp 的 java代码中，自动获取了 session(pagecontext.getsession())。
+     *
+     * 正常的 cookie 只能在一个应用中共享，即一个cookie只能由创建它的应用获得。
+     *
+     1，可在同一应用服务器内共享方法：设置cookie.setPath("/"); ，例如本机 tomcat/webapp 下面有两个应用：cas和webapp_b，
+     1）原来在cas下面设置的cookie，在webapp_b下面获取不到，path默认是产生cookie的应用的路径。
+     2）若在cas下面设置cookie的时候，增加一条cookie.setPath("/");或者cookie.setPath("/webapp_b/");就可以在webapp_b下面获取到cas设置的cookie了。
+     3）此处的参数，是相对于应用服务器存放应用的文件夹的根目录而言的(比如tomcat下面的webapp)，因此cookie.setPath("/");之后，可以在webapp文件夹下的所有应用共享cookie，而cookie.setPath("/webapp_b/");是指cas应用设置的cookie只能在webapp_b应用下的获得，即便是产生这个cookie的cas应用也不可以。
+     4）设置cookie.setPath("/webapp_b/jsp")或者cookie.setPath("/webapp_b/jsp/")的时候，只有在webapp_b/jsp下面可以获得cookie，在webapp_b下面但是在jsp文件夹外的都不能获得cookie。
+     5）设置cookie.setPath("/webapp_b");，是指在webapp_b下面才可以使用cookie，这样就不可以在产生cookie的应用cas下面获取cookie了
+     6）有多条cookie.setPath("XXX");语句的时候，起作用的以最后一条为准。
+
+     2，跨域共享cookie的方法：设置cookie.setDomain(".jszx.com"); ，例如 A 机所在的域：langchao.com，A有应用 waaa。B 机所在的域：jszx.com，B有应用 wbbb。
+     1）在 waaa下面设置cookie的时候，增加cookie.setDomain(".jszx.com");，这样在 wbbb下面就可以取到cookie。
+     2）这个参数必须以“.”开始。
+     3）输入url访问 wbbb 的时候，必须输入域名才能解析。比如说在A机器输入：http://jszx.com:8080/wbbb，可以获取 waaa 在客户端设置的cookie，而B机器访问本机的应用，输入：http://localhost:8080/wbbb 则不可以获得cookie。
+     4）设置了cookie.setDomain(".jszx.com");，还可以在默认的 langchao.com 下面共享。
+     5）设置多个域的方法？？？
+
+     */
 }

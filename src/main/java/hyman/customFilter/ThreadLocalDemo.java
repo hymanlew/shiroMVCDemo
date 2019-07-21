@@ -5,10 +5,10 @@ import org.springframework.core.NamedThreadLocal;
 
 import java.util.List;
 
+/**
+ * 线程安全示例
+ */
 public class ThreadLocalDemo {
-    /**
-     * 线程安全示例
-     */
 
     // css文件路径集合
     private static ThreadLocal<List<String>> CSS_FILE_THREAD = new NamedThreadLocal<List<String>>("ThreadLocal StartTime");
@@ -31,7 +31,6 @@ public class ThreadLocalDemo {
         }
     }
 
-
     @SuppressWarnings("unchecked")
     private static <T> T getControl(String name, String type)
             throws ClassNotFoundException, InstantiationException, IllegalAccessException {
@@ -43,13 +42,4 @@ public class ThreadLocalDemo {
         return (T) ect;
     }
 
-}
-
-
-/**
- * 定义校验顺序，如果AddGroup组失败，则UpdateGroup组不会再校验
- AddGroup.class, UpdateGroup.class 都是自定义的接口。
- */
-//@GroupSequence({AddGroup.class, UpdateGroup.class})
-interface Group {
 }

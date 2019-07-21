@@ -11,14 +11,6 @@ import java.util.Map;
 
 public class DataPermitTool {
 
-    /**
-     *
-     * @Description:(获取平台id)
-     * @param request
-     * @return
-     * @author:yankai@cmnec.com
-     * @date:2018年11月19日
-     */
     public static String getDataPermit(HttpServletRequest request, String businessFlag){
         String dataPermit = "";
         try {

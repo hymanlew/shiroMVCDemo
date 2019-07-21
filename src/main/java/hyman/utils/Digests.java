@@ -48,7 +48,7 @@ public class Digests {
             }
             return result;
         } catch (GeneralSecurityException e) {
-            throw exceptions.unchecked(e);
+            throw Exceptions.unchecked(e);
         }
     }
     public static byte[] generateSalt(int numBytes) {

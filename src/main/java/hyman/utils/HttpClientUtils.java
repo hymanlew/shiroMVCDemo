@@ -25,7 +25,6 @@ import java.util.Map;
 
 public class HttpClientUtils {
 
-
     /**
      * Logger对象
      */

@@ -188,9 +188,7 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
                 sb.append(c);
             }
         }
-
         s = sb.toString();
-
         return s.substring(0, 1).toLowerCase() + s.substring(1);
     }
 

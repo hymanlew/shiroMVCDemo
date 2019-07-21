@@ -45,6 +45,8 @@
                 <value>config.validator</value>
             </list>
         </property>
+        <property name="defaultEncoding" value="utf-8"></property>
+        <property name="cacheMillis" value="120"></property>
     </bean>
     <!-- 国际化信息处理类 -->
     <bean id="localeResolver" class="org.springframework.web.servlet.i18n.CookieLocaleResolver" p:cookieMaxAge="100000" />
@@ -156,7 +158,7 @@
     </bean>
 
     <!-- 扩展 servletContext ，以静态变量保存Spring ApplicationContext, 可在任何代码任何地方任何时候中取出ApplicaitonContext -->
-    <bean id="SpringContextHolder" class="hyman.config.SpringContextHolder"></bean>
+    <bean id="SpringContextHolder" class="hyman.utils.SpringContextHolder"></bean>
 
     <!--
     默认情况下，Spring容器仅允许最多定义一个PropertyPlaceholderConfigurer 或 <content:property-placeholder>，如果有多个属性文件，

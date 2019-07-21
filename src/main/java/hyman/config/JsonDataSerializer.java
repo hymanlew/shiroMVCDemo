@@ -23,6 +23,7 @@ import java.util.Locale;
 public class JsonDataSerializer extends NonTypedScalarSerializerBase<Object> {
 
     private static final long serialVersionUID = 1L;
+
     @Resource
     private MessageSource messageSource;
 

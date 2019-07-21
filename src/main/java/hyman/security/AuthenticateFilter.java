@@ -1,19 +1,13 @@
 package hyman.security;
 
-import com.alibaba.druid.util.HttpClientUtils;
-import com.alibaba.fastjson.JSONObject;
-import hyman.dao.UserDao;
 import hyman.entity.ResponseData;
 import hyman.entity.User;
-import hyman.interceptor.ApiInterceptor;
-import hyman.utils.Constant;
 import hyman.utils.CookieUtil;
 import hyman.utils.CryptograpUtil;
 import hyman.utils.PropertyUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.UsernamePasswordToken;
-import org.apache.shiro.subject.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,9 +17,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.util.HashMap;
-import java.util.Map;
 
 public class AuthenticateFilter implements Filter {
 

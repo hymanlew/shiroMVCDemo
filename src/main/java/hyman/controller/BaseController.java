@@ -1,7 +1,7 @@
 package hyman.controller;
 
 import hyman.config.CustomException;
-import hyman.config.FreeMarkers;
+import hyman.config.freemarker.FreeMarkers;
 import hyman.entity.ResponseData;
 import hyman.utils.BeanValidators;
 import hyman.utils.Constant;
@@ -18,7 +18,6 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer;
 
 import javax.annotation.Resource;

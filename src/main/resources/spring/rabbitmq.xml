@@ -17,7 +17,7 @@
 
     <!-- 启动@aspectj的自动代理支持-->
     <aop:aspectj-autoproxy proxy-target-class="true" />
-    <bean id="cmeLogAop" class="hyman.aop.CmeLogAop" />
+    <bean id="cmeLogAop" class="hyman.aop.LogAop" />
 
     <!--配置connection-factory，指定连接rabbit server参数 -->
     <rabbit:connection-factory id="connectionFactory"

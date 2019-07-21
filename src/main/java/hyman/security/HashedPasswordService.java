@@ -32,9 +32,7 @@ public class HashedPasswordService {
     }
 
     public String encryptPassword(User user) {
-        if (user == null || org.apache.commons.lang3.StringUtils.isBlank(user.getId().toString())
-                || org.apache.commons.lang3.StringUtils.isBlank(user.getId().toString())
-                || org.apache.commons.lang3.StringUtils.isBlank(user.getPassword())) {
+        if (user == null || org.apache.commons.lang3.StringUtils.isBlank(user.getPassword())) {
             return null;
         }
         Hash hash = hashProvidedCredentials(user.getPassword().trim(), createByteSource(user.getId()), hashIterations);

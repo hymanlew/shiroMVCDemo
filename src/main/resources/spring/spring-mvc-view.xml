@@ -102,7 +102,7 @@
         <property name="order" value="1" />
     </bean>
     <!-- 重写配置类的方法，填入全局变量 -->
-    <bean id="freemarkerConfig" class="hyman.config.ShiroTagFreeMarkerConfigurer">
+    <bean id="freemarkerConfig" class="hyman.config.shiro.ShiroTagFreeMarkerConfigurer">
         <property name="templateLoaderPath" value="/WEB-INF/ftl/" />
         <property name="freemarkerVariables" value="#{propertyUtils.getBeanMap('directive.')}" />
         <!--<property name="freemarkerVariables">-->

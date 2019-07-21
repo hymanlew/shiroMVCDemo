@@ -7,7 +7,7 @@ import java.util.Enumeration;
 
 public class Log4j2ConfigListener implements ServletContextListener {
 
-    private static final String KEY = "log4j.configurationFile";
+    private static final String KEY = "log4j2.xml";
 
     @Override
     public void contextDestroyed(ServletContextEvent arg0) {

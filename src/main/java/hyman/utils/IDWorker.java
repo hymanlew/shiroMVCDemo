@@ -2,6 +2,7 @@ package hyman.utils;
 
 import com.alibaba.fastjson.JSONObject;
 import hyman.entity.ResponseData;
+import moreway.redis.RedisUtil;
 import org.apache.commons.lang3.RandomUtils;
 
 import java.util.Date;

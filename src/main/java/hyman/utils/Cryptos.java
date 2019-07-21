@@ -45,7 +45,7 @@ public class Cryptos {
             mac.init(secretKey);
             return mac.doFinal(input);
         } catch (GeneralSecurityException e) {
-            throw exceptions.unchecked(e);
+            throw Exceptions.unchecked(e);
         }
     }
 
@@ -85,7 +85,7 @@ public class Cryptos {
      */
     public static String aesEncrypt(String input) {
         try {
-            return encodes.encodeHex(aesEncrypt(input.getBytes(DEFAULT_URL_ENCODING), DEFAULT_KEY));
+            return Encodes.encodeHex(aesEncrypt(input.getBytes(DEFAULT_URL_ENCODING), DEFAULT_KEY));
         } catch (UnsupportedEncodingException e) {
             return "";
         }

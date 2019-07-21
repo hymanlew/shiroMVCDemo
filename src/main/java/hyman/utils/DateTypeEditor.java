@@ -48,6 +48,7 @@ public class DateTypeEditor extends PropertyEditorSupport {
      * @param text 日期字符串
      * @throws IllegalArgumentException 参数异常
      */
+    @Override
     public void setAsText(String text) throws IllegalArgumentException {
         String tmpText = text.trim();
         if (!StringUtils.hasText(tmpText)) {
