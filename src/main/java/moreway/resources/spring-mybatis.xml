@@ -48,11 +48,11 @@ http://www.springframework.org/schema/aop/spring-aop-3.2.xsd http://www.springfr
 	</bean>
 
     <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean" >
-        <property name="configLocation" value="classpath:spring/mybatis-config.xml" />
+        <property name="configLocation" value="classpath:moreway/resources/mybatis-config.xml" />
 		<property name="dataSource" ref="dataSource" />
 
 		<!-- 自动扫描 mapper目录, 省掉了 mybatis-config 中 Configuration里的手工配置 -->
-		<property name="mapperLocations" value="classpath:mapping/permissonMapper.xml" />
+		<property name="mapperLocations" value="classpath:mapping/*.xml" />
 	</bean>
 
 	<!-- myBatis 在 basedao中使用 -->

@@ -73,7 +73,7 @@
         <setting name="lazyLoadTriggerMethods" value="equals,clone,hashCode,toString"/>
 
         <!-- 是否开启驼峰式命名，数据库的列名能够映射到去除下划线驼峰命名后的字段名，即从经典数据库列名 A_COLUMN 到经典 Java 属性名 aColumn的类似映射。 -->
-        <setting name="mapUnderscoreToCamelCase" value="false"/>
+        <setting name="mapUnderscoreToCamelCase" value="true"/>
 
         <!--  指定 MyBatis 所用日志的具体实现，未指定时将自动查找，不用设置 -->
         <!--<setting name="logImpl" value="SLF4J"/>-->

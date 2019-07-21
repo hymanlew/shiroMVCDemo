@@ -29,7 +29,7 @@
     <bean id="validator"
           class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean">
         <property name="providerClass" value="org.hibernate.validator.HibernateValidator"/>
-        <!-- 这里配置将使用上面国际化配置的messageSource -->
+        <!-- 这里配置将使用上面国际化配置的messageSource，如果不加默认使用classpath下的 ValidationMessages.properties -->
         <property name="validationMessageSource" ref="messageSource"/>
     </bean>
     <!--  自定义一个异常信息处理拦截器 -->
@@ -39,17 +39,25 @@
     <bean id="messageSource"
           class="org.springframework.context.support.ResourceBundleMessageSource">
         <property name="basenames">
+            <!-- 在web环境中一定要定位到classpath 否则默认到当前web应用下找  -->
             <list>
                 <value>internal.en_US</value>
                 <value>internal.zh_CN</value>
                 <value>config.validator</value>
             </list>
         </property>
-        <property name="defaultEncoding" value="utf-8"></property>
+        <property name="useCodeAsDefaultMessage" value="false"/>
+        <property name="defaultEncoding" value="UTF-8"></property>
         <property name="cacheMillis" value="120"></property>
     </bean>
     <!-- 国际化信息处理类 -->
     <bean id="localeResolver" class="org.springframework.web.servlet.i18n.CookieLocaleResolver" p:cookieMaxAge="100000" />
+
+    <!-- 如果是方法级别的验证 -->
+    <bean class="org.springframework.validation.beanvalidation.MethodValidationPostProcessor">
+        <!-- 可以引用自己的 validator 配置，如果不指定则系统使用默认的 -->
+        <property name="validator" ref="validator"/>
+    </bean>
 
 
     <!-- spring-mvc 配置根视图 -->

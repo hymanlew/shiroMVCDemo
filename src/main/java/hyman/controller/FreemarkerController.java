@@ -2,6 +2,7 @@ package hyman.controller;
 
 import hyman.config.freemarker.FreeMarkers;
 import hyman.entity.User;
+import hyman.service.ValidatorService;
 import hyman.utils.Logutil;
 import hyman.utils.UserUtils;
 import org.springframework.stereotype.Controller;
@@ -11,10 +12,13 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
 import javax.validation.Valid;
 import java.util.HashMap;
 import java.util.Map;
@@ -114,5 +118,42 @@ public class FreemarkerController {
      * 或者使用 map 进行封装然后在页面中直接接收显示。
      *
      * 详细信息在 hyman.aop.group 类中。
+     *
      */
+
+    @Resource
+    private ValidatorService validatorService;
+
+     // 测试方法级别的验证（如果验证失败，则会抛出异常 ConstraintViolationException）
+    @RequestMapping("/valiMethod")
+    @ResponseBody
+    public Model valiMethod(String name, String password, Model model){
+
+        try {
+            String content = validatorService.getContent(name, password);
+            model.addAttribute("name", content);
+        } catch (ConstraintViolationException e) {
+            addErrorMessage(model, e);
+        }
+        return model;
+    }
+
+    /**
+     * 添加错误消息，建议将该方法提取为一个公共的方法使用。
+     */
+    protected void addErrorMessage(Model model, ConstraintViolationException e){
+        Map<String, String> errorMsg = new HashMap<>();
+        model.addAttribute("errorMsg", errorMsg);
+
+        for (ConstraintViolation<?> constraintViolation : e.getConstraintViolations()) {
+
+            // 获得验证失败的类 constraintViolation.getLeafBean()
+            // 获得验证失败的值 constraintViolation.getInvalidValue()
+            // 获取参数值 constraintViolation.getExecutableParameters()
+            // 获得返回值 constraintViolation.getExecutableReturnValue()
+            errorMsg.put(constraintViolation.getLeafBean().getClass().getName() + "-" + constraintViolation.getPropertyPath
+                    ().toString(), constraintViolation.getMessage());
+        }
+    }
+
 }

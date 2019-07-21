@@ -473,4 +473,21 @@ https://www.jianshu.com/p/d7b0e981868d
             </properties>
         </profile>
     </profiles>
+
+    <!-- 如何在项目中应用 snapshot 和 release 库，应用 snapshot和release 库达到不同环境下发布不同的版本的目的 -->
+    <!--定义snapshots库和releases库的nexus地址-->
+    <distributionManagement>
+        <repository>
+            <id>nexus-releases</id>
+            <url>
+                http://172.17.103.59:8081/nexus/content/repositories/releases/
+            </url>
+        </repository>
+        <snapshotRepository>
+            <id>nexus-snapshots</id>
+            <url>
+                http://172.17.103.59:8081/nexus/content/repositories/snapshots/
+            </url>
+        </snapshotRepository>
+    </distributionManagement>
 </project>

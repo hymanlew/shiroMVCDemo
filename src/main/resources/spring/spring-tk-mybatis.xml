@@ -8,8 +8,30 @@
         http://www.springframework.org/schema/context
         http://www.springframework.org/schema/context/spring-context.xsd">
 
-    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
-        <!--。。。。。-->
+    <!--
+		在使用此配置调用 properties数据源配置文件时出现 Access denied for user 'Administrator'@'localhost' (using password: YES) 错误！
+		错误原因：是在系统中也有个 username属性，这时系统变量覆盖了Properties中的值，这时取得username的值为系统的用户名Administrator，密码为
+		properties 中的 password去查询数据库，此时用户名名和密码并不匹配就会报错。在Spring完成注入时是用 "${..}" 方式获取值完成注入的。而通过这种
+		表达式也能直接获取到JVM系统属性..........
+
+		方案一：将properties文件中的username换成user或其他就字符串就可以成功获取连接访问数据库。建议：username是敏感词汇，为了安全起见还是尽量不要使用username。
+　　		方案二：在该配置语句中添加一个 system-properties-mode属性，它有三个值：FALLBACK（默认值，不存在时覆盖），NEVER（不覆盖），OVERRIDE（覆盖）。
+			   即选择前两个。
+		方案三：使用 PropertyPlaceholderConfigurer。
+	-->
+    <context:property-placeholder ignore-resource-not-found="true" location="classpath:config/db.properties" />
+
+    <!-- 配置真实数据源 -->
+    <bean name="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+        <property name="driverClassName" value="${driver}" />
+        <property name="url" value="${url}" />
+        <property name="username" value="${name}" />
+        <property name="password" value="${password}" />
+        <property name="initialSize" value="${initialSize}" />
+        <property name="maxActive" value="${maxActive}" />
+        <property name="validationQuery" value="${validationQuery}" />
+        <property name = "filters" value = "${filters}" />
+        <!-- .... -->
     </bean>
     <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
         <property name="dataSource" ref="dataSource"/>
@@ -20,21 +42,29 @@
                 <prop key="mapUnderscoreToCamelCase">true</prop>
             </props>
         </property>
-        <property name="mapperLocations" value="classpath*:mybatis/**/mapper/*.xml"/>
+        <!-- 自动扫描 mapper目录, 省掉了 mybatis-config 中 Configuration里的手工配置 -->
+        <property name="mapperLocations" value="classpath:mapping/*.xml" />
         <property name="typeAliasesPackage" value="com.cme.**.domain"/>
     </bean>
 
+    <!--
+    Example，Criteria，tk.mybatis，
+    https://blog.csdn.net/q564495021/article/details/81607515
+    https://blog.csdn.net/sinat_38419207/article/details/82907387
+    -->
     <bean class="tk.mybatis.spring.mapper.MapperScannerConfigurer">
-        <property name="basePackage" value="com.cme.**.mapper"/>
+        <property name="basePackage" value="hyman.dao" />
         <!-- 3.2.2版本新特性，markerInterface可以起到mappers配置的作用，详细情况需要看Marker接口类，自定义数据层基础类，继承 mapper  -->
-        <property name="markerInterface" value="com.cme.application.base.mapper.BaseMapper"/>
-        <!-- 通用Mapper通过属性注入进行配置，默认不配置时会注册Mapper<T>接口 <property name="properties">
-            <value> mappers=tk.mybatis.mapper.common.Mapper </value> </property> -->
+        <property name="markerInterface" value="hyman.dao.BaseMapper"/>
+
+        <!-- 通用Mapper通过属性注入进行配置，默认不配置时会注册Mapper<T>接口 -->
+        <!--<property name="properties">-->
+            <!--<value> mappers=tk.mybatis.mapper.common.Mapper </value>-->
+         <!--</property>-->
     </bean>
 
     <!-- SqlSessionTemplate 线程安全，dao 引用时安全。且与 spring 事务相关联，保持一致性 -->
-    <bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate"
-          scope="prototype">
+    <bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate" scope="prototype">
         <constructor-arg index="0" ref="sqlSessionFactory"/>
     </bean>
     <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">

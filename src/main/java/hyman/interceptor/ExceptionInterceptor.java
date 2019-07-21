@@ -19,10 +19,31 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * 官方参考实现是hibernate Validator（与Hibernate ORM 没有关系），JSR 303 用于对Java Bean 中的字段的值进行验证。
+ *
+ * 配置信息，默认在 ValidationMessages.properties 配置文件中。在 boot 中名字必须为 “ValidationMessages.properties“，因为
+ * SpringBoot 自动读取 classpath 中的 ValidationMessages.properties 里的错误信息（名字是固定死的）。
+ * 可以通过设置 validationMessageSource 属性的值来指定配置文件。
+ *
+ * user.username.illegal=用户名格式不正确
+ * password.length.illegal=密码[${validatedValue}]长度必须为{min}到{max}个字符
+ *
+ * 其中 ${validatedValue} 用来获取预校验属性的值。{min} 和 {max} 用来读取 @Size 注解中对应的属性值。
+ * 你还可以像 ${max > 1 ? '大于1' : '小于等于1'} 这样使用el表达式。
+ * 另外还可以拿到一个 java.util.Formatter 类型的 formatter 变量进行格式化：${formatter.format("%04d", min)}
+ *
+ * el jar 包：
+ <dependency>
+ <groupId>javax.el</groupId>
+ <artifactId>javax.el-api</artifactId>
+ <version>2.2.4</version>
+ <scope>provided</scope>
+ </dependency>
+ */
 public class ExceptionInterceptor extends HandlerInterceptorAdapter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ExceptionInterceptor.class);
-
 
     // 或者使用拦截器 after 方法对处理错误信息进行处理后传递给页面(我们使用JSON请求的时候就需要这样做)。
     @Override
