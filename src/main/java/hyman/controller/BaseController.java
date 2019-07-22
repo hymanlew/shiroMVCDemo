@@ -34,6 +34,64 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+    @ModelAttribute使用详解（可用于注解方法和参数）:
+    当注解方法时，被 @ModelAttribute 注释的方法会在此 controller 每个方法执行前被执行。一般该方法只用于注入 request，response，而不注入某些具体的参数。因为如果 url 没有传递该参数的话，就会抛出异常。
+
+    1，当注释 void 方法时：
+     @ModelAttribute
+     public void populateModel(@RequestParam String abc, Model model) {
+     model.addAttribute("attributeName", abc);
+     }
+
+     protected HttpServletRequest request;
+     protected HttpServletResponse response;
+     @ModelAttribute
+     public void setAttribute(HttpServletRequest request,HttpServletResponse response){
+     this.request = request;
+     this.response = response;
+     }
+
+     2，当注释有具体返回类的方法时：
+     @ModelAttribute
+     public User userModel(@RequestParam("username") String username,@RequestParam("pwd") String pwd){
+     User  user = new User(username,pwd);
+     return user;
+     }
+     此时 model 的 key 没有指定，它由返回类型隐含表示（如这个方法返回 User 类型，那么 key 是 user），value 值是方法的返回值。它无须要特定的参数。
+
+     3，@ModelAttribute(value="name") 注释返回具体类的方法 ：
+     @ModelAttribute("attributeName")
+     public String addAccount(@RequestParam String abc) {
+     return abc;
+     }
+     此时，value 的属性值作为 key，value 就是方法的返回值。它无须要特定的参数。
+
+     4，@ModelAttribute和@RequestMapping同时注释一个方法：
+     @RequestMapping(value = "/helloWorld.do")
+     @ModelAttribute("attributeName")
+     public String helloWorld() {
+     return "hi";
+     }
+     此时，该方法的返回值并不是一个视图名称，而是model 的 value 值。视图名称由 RequestToViewNameTranslator 根据请求 "/helloWorld.do"  转换为逻辑视图helloWorld。
+     即 RequestMapping("/yyy") 作为请求路径，也同时作为视图名，即跳转页面的名称。
+     value 的属性值作为 key，value 就是方法的返回值。
+
+     5，@ModelAttribute注释一个方法的参数：
+     @ModelAttribute("user")
+     public User addAccount() {
+     return new User("jz","123");
+     }
+
+     @RequestMapping(value = "/helloWorld")
+     public String helloWorld(@ModelAttribute("user") User user) {
+     user.setUserName("jizhou");
+     return "helloWorld";
+     }
+     参数 user 的值来源于 addAccount()方法中的 model 值，如果没有 addAccount()方法则前端需要传递参数（从Form表单或URL参数中获取），user 才不会为空。
+     此时如果方法体没有标注 @SessionAttributes("user")，那么scope为request，如果标注了，那么 scope 为 session。
+ */
+
 public abstract class BaseController {
 
     /***

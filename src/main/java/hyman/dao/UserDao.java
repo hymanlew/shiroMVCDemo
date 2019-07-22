@@ -6,7 +6,10 @@ import hyman.entity.User;
 
 import java.util.*;
 
-public interface UserDao{
+/**
+ * 自定义 sql 查询映射方法
+ */
+public interface UserDao extends BaseMapper<User> {
 
     User getByname(String name);
 
@@ -15,4 +18,6 @@ public interface UserDao{
     List<Permission> getPermis(List<Integer> roleIds);
 
     List<Roles> getRolesByName(String username);
+
+    //int getCount(@Param("vo") BSysLanguage bSysLanguage);
 }

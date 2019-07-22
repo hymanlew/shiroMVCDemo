@@ -3,13 +3,10 @@
         PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
         "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
 
-<!-- 该文件的文件名是固定的，不可随意更改，并且要注意这些配置的标签是有上下顺序的，错误的顺序会报红线 -->
+<!-- -->
+<!-- 该文件的文件名是固定的，不可随意更改 -->
 <generatorConfiguration>
-
-    <!-- 引入外部配置文件，可以动态配置相关的参数，使用 ${} 获取参数值 -->
-    <!--<properties resource="generator.properties"></properties>-->
-
-    <!-- 指定数据库连接驱动（或者额外需要依赖的 jar 包），如果项目引入了mysql驱动jar，就可以不写 -->
+    <!-- 指定文件路径 -->
     <classPathEntry location="E:\Java\selfProject/mysql-connector-java-5.1.16.jar" />
 
     <!--
@@ -22,7 +19,7 @@
             1，conditional：默认值，与hierarchical模型相似,除了如果一个实体类只包含一个字段,则不会单独生成此实体类。因此如果一个表的主键
                             只有一个字段,那么不会为该字段生成单独的实体类,会将该字段合并到基本实体类中；
             2，flat：所有内容（主键，blob）等全部生成在一个对象中，该模型为每一张表只生成一个实体类。这个实体类包含表中的所有字段。这种模型
-                            最简单，推荐使用。；
+                            最简单，推荐使用。
             3，hierarchical：如果表有主键,那么该模型会产生一个单独的主键实体类,如果表还有BLOB字段，则会为表生成一个包含所有BLOB字段的单独
                             的实体类,然后为所有其他的字段生成一个单独的实体类。MBG会在所有生成的实体类之间维护一个继承关系。显然这个模型比较复杂。
 
@@ -37,32 +34,6 @@
     <!--<context id="mysqlTables" defaultModelType="flat" targetRuntime="MyBatis3Simple">-->
     <context id="mysqlTables" defaultModelType="flat" targetRuntime="MyBatis3">
 
-        <!-- 指定生成的java文件的编码,没有直接生成到项目时中文可能会乱码 -->
-        <property name="javaFileEncoding" value="UTF-8"/>
-
-        <!-- 格式化java代码-->
-        <property name="javaFormatter" value="org.mybatis.generator.api.dom.DefaultJavaFormatter" />
-
-        <!-- 格式化XML代码-->
-        <property name="xmlFormatter" value="org.mybatis.generator.api.dom.DefaultXmlFormatter" />
-
-        <!--配置是否使用通用 Mapper 自带的注释扩展，默认 true-->
-        <!--<property name="useMapperCommentGenerator" value="false"/>-->
-
-        <!--通用 Mapper 插件，可以生成带注解的实体类-->
-        <plugin type="tk.mybatis.mapper.generator.MapperPlugin">
-            <property name="mappers" value="hyman.dao.BaseMapper" />
-            <property name="caseSensitive" value="true"/>
-            <property name="forceAnnotation" value="true"/>
-
-            <!-- 指明数据库的用于标记数据库对象名的符号，比如 ORACLE 就是双引号，MYSQL默认是 ` 单反引号 -->
-            <property name="beginningDelimiter" value="`"/>
-            <property name="endingDelimiter" value="`"/>
-            <!--配置是否启用lombok, 支持如下6种注解-->
-            <!--当配置 Data 后，Getter Setter ToString EqualsAndHashCode 会被忽略-->
-            <property name="lombok" value="Getter,Setter,Data,ToString,Accessors,EqualsAndHashCode"/>
-        </plugin>
-
         <!-- 该元素最多可以配置1个，用于在 MBG生成的代码中可以包含注释信息，即生成表或字段的备注信息。 -->
         <commentGenerator>
             <!-- 是否阻止生成注释信息，如果不阻止的话，每个方法上都会生成系统注释，没毛用 -->
@@ -71,14 +42,11 @@
             <property name="suppressDate" value="true" />
         </commentGenerator>
 
-        <!-- 使用 Freemarker 模板语言编写代码，这个代码生成器实际上是对 MyBatis Generator 的一个扩展 -->
-        <!-- https://gitee.com/free/Mapper/tree/master/generator -->
-
         <!--
             用于指定数据库连接信息，该元素必选，并且只能有一个。
             配置该元素只需要注意如果 JDBC驱动不在 classpath下，就需要通过 <classPathEntry>元素引入jar包。推荐将 jar包放到 classpath下。
         -->
-        <jdbcConnection driverClass="com.mysql.jdbc.Driver" connectionURL="jdbc:mysql://localhost:3306/test?useUnicode=true&amp;characterEncoding=utf8&amp;useSSL=false"
+        <jdbcConnection driverClass="com.mysql.jdbc.Driver" connectionURL="jdbc:mysql://localhost:3306/test"
                         userId="root" password="123456" />
 
         <!--
@@ -95,14 +63,6 @@
             不同的实体类。一个表对应多个类实际上并不方便，所以前面也推荐使用flat，这种情况下一个表对应一个实体类。
         -->
         <javaModelGenerator targetPackage="hyman.entity" targetProject="src/main/java">
-
-            <!-- for MyBatis3/MyBatis3Simple，自动为每一个生成的类创建一个构造方法，包含了所有的field，而不是使用setter -->
-            <property name="constructorBased" value="false" />
-
-            <!-- for MyBatis3/MyBatis3Simple，是否创建一个不可变的类。
-                如果为true，那么MBG会创建一个没有setter方法的类，取而代之的是类似 constructorBased 的类
-            -->
-            <property name="immutable" value="false" />
 
             <!--
                 如果为 true，MBG会根据 catalog（目录）和 schema（图解模式）来生成子包。如果false就会直接用targetPackage属性。默认为false
@@ -133,6 +93,7 @@
             <property name="enableSubPackages" value="true" />
         </sqlMapGenerator>
 
+
         <!-- 自动生成Mapper接口 -->
         <!--<javaClientGenerator type="XMLMAPPER" targetPackage="com.hyman.dao"-->
                              <!--targetProject="src\main\java" />-->
@@ -141,46 +102,14 @@
             该元素至少要配置一个，可以配置多个。是用来要通过内省的表，生成实体类和其他文件。
             domainObjectName，生成对象的基本名称。如果没有指定，MBG会自动根据表名来生成名称。
             enableXXX，XXX代表多种SQL方法，该属性用来指定是否生成对应的XXX语句。
-
-            选择一个table来生成相关文件，可以有一个或多个table，必须要有table元素。选择的table会生成一下文件：
-            1，SQL map文件
-            2，生成一个主键类；
-            3，除了BLOB和主键的其他字段的类；
-            4，包含BLOB的类；
-            5，一个用户生成动态查询的条件类（selectByExample,deleteByExample），可选；
-            6，Mapper接口（可选）
-            tableName（必要）：要生成对象的表名；
-            注意：大小写敏感问题。正常情况下，MBG会自动的去识别数据库标识符的大小写敏感度，在一般情况下，MBG会
-                根据设置的schema，catalog或tablename去查询数据表，按照下面的流程：
-                1，如果schema，catalog或tablename中有空格，那么设置的是什么格式，就精确的使用指定的大小写格式去查询；
-                2，否则，如果数据库的标识符使用大写的，那么MBG自动把表名变成大写再查找；
-                3，否则，如果数据库的标识符使用小写的，那么MBG自动把表名变成小写再查找；
-                4，否则，使用指定的大小写格式查询；
-            另外的，如果在创建表的时候，使用的""把数据库对象规定大小写，就算数据库标识符是使用的大写，在这种情况下也会使用给定的大小写来创建表名；
-            这个时候，请设置delimitIdentifiers="true"即可保留大小写格式；
-     
-           可选：
-            1，schema：数据库的schema；
-            2，catalog：数据库的catalog；
-            3，alias：为数据表设置的别名，如果设置了alias，那么生成的所有的SELECT SQL语句中，列名会变成：alias_actualColumnName
-            4，domainObjectName：生成的domain类的名字，如果不设置，直接使用表名作为domain类的名字；可以设置为somepck.domainName，那么会自动把domainName类再放到somepck包里面；
-            5，enableInsert（默认true）：指定是否生成insert语句；
-            6，enableSelectByPrimaryKey（默认true）：指定是否生成按照主键查询对象的语句（就是getById或get）；
-            7，enableSelectByExample（默认true）：MyBatis3Simple为false，指定是否生成动态查询语句；
-            8，enableUpdateByPrimaryKey（默认true）：指定是否生成按照主键修改对象的语句（即update)；
-            9，enableDeleteByPrimaryKey（默认true）：指定是否生成按照主键删除对象的语句（即delete）；
-            10，enableDeleteByExample（默认true）：MyBatis3Simple为false，指定是否生成动态删除语句；
-            11，enableCountByExample（默认true）：MyBatis3Simple为false，指定是否生成动态查询总条数语句（用于分页的总条数查询）；
-            12，enableUpdateByExample（默认true）：MyBatis3Simple为false，指定是否生成动态修改语句（只修改对象中不为空的属性）；
-            13，modelType：参考context元素的defaultModelType，相当于覆盖；
-            14，delimitIdentifiers：参考tableName的解释，注意，默认的delimitIdentifiers是双引号，如果类似MYSQL这样的数据库，使用的是`（反引号，那么还需要设置context的beginningDelimiter和endingDelimiter属性）
-            15，delimitAllColumns：设置是否所有生成的SQL中的列名都使用标识符引起来。默认为false，delimitIdentifiers参考context的属性
-     
-           注意，table里面很多参数都是对javaModelGenerator，context等元素的默认属性的一个复写；
-        -->
-        <table tableName="user" domainObjectName="User"
-                enableCountByExample="false" enableSelectByExample="false"
-                enableUpdateByExample="false" enableDeleteByExample="false">
+        -->
+        <!--<table tableName="user" domainObjectName="User"-->
+                <!--enableCountByExample="false" enableSelectByExample="false"-->
+                <!--enableUpdateByExample="false" enableDeleteByExample="false">-->
+        <!--</table>-->
+        <table tableName="sessions" domainObjectName="Sessions"
+               enableCountByExample="false" enableSelectByExample="false"
+               enableUpdateByExample="false" enableDeleteByExample="false">
         </table>
 
         <!-- 当使用了 Mybatis3Simple运行环境时，就不用设置 enableXXX 了，因为它默认就是不生成 example 动态sql语句 -->

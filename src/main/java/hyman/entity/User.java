@@ -2,6 +2,10 @@ package hyman.entity;
 
 import org.hibernate.validator.constraints.Length;
 
+import javax.persistence.Column;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
@@ -9,7 +13,11 @@ import javax.validation.constraints.NotEmpty;
 import java.io.Serializable;
 
 // 对于缓存的对象必须实现serizable接口
+// 表名默认使用类名,驼峰转下划线(只对大写字母进行处理),如UserInfo默认对应的表名为user_info。
+@Table(name = "user")
 public class User implements Serializable{
+
+    private static final long serialVersionUID = 1L;
 
     /**
      * Bean Validation 中内置的 constraint： 
@@ -36,6 +44,9 @@ public class User implements Serializable{
      @CreditCardNumber     字符串必须通过Luhn校验算法（例如银行卡）
      */
 
+    // 字段默认和@Column一样,都会作为表字段,表字段默认为Java对象的Field名字驼峰转下划线形式。
+    @Id
+    @Column(name = "id")
     private Integer id;
 
     @NotBlank(message="${error.name.blank}")
@@ -45,6 +56,8 @@ public class User implements Serializable{
     @Length(min=6,message="${error.passlenth}")
     private String password;
 
+    // 忽略字段,添加该注解的字段不会作为表字段使用。
+    @Transient
     @Max(value=100,message="${error.age.max}")
     @Min(value=18,message="${error.age.min}")
     private Integer age;

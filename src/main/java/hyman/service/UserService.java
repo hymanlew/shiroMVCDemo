@@ -7,7 +7,10 @@ import hyman.entity.User;
 import java.util.List;
 import java.util.Set;
 
-public interface UserService {
+/**
+ * 另外自定义业务处理的方法s
+ */
+public interface UserService extends BaseService<User>{
 
     User getByname(String name);
 
