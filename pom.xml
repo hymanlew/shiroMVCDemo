@@ -420,7 +420,7 @@
                     <encoding>UTF8</encoding>
                     <compilerArguments>
                         <!-- 分号（window）或者 冒号(linux) 或者注释都可以 -->
-                        <bootclasspath>${java.home}\jre\lib\rt.jar:${java.home}\jre\lib\jce.jar</bootclasspath>
+                        <bootclasspath>${java.home}\jre\lib\rt.jar;${java.home}\jre\lib\jce.jar</bootclasspath>
                     </compilerArguments>
                 </configuration>
             </plugin>

@@ -17,7 +17,7 @@
 
     <!--<context:component-scan base-package="hyman.controller"/>-->
     <!--<context:component-scan base-package="hyman.service"/>-->
-    <context:component-scan base-package="hyman"/>
+    <context:component-scan base-package="hyman.*"/>
 
     <context:property-placeholder location="classpath:config/*.properties"/>
 
