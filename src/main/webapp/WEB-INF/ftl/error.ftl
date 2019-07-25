@@ -1,10 +1,4 @@
 
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="shiro" uri="http://shiro.apache.org/tags" %>
-<%
-  String id = request.getParameter("id");
-  String name = request.getParameter("name");
-%>
 <html>
 <head>
     <title>Title</title>

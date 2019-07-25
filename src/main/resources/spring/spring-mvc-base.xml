@@ -250,6 +250,9 @@
 
     RedisHttpSessionConfiguration 可以简单理解为 spring-session 使用redis来存储 session的功能类，此类本身使用了 @Configuration
     注解，@Configuration注解相当于把该类作为spring的xml配置文件中的，此类中包含了很多bean对象同样也是注解@Bean；
+
+    其原理就是内部创建名为 springSessionRepositoryFilter 的Spring Bean，它继承自Filter。它用于替换容器默认的 HttpSession 支持为
+    Spring Session，将 Session 实例存放在 Redis 中（并由 DelegatingFilterProxy（web.xml） 统一对 filter 进行调度管理）。
     -->
     <!-- 使用 spring-session -->
     <bean id="redisHttpSessionConfiguration" class="org.springframework.session.data.redis.config.annotation.web.http.RedisHttpSessionConfiguration">

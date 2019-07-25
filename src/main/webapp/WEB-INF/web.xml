@@ -17,13 +17,40 @@
   </listener>
 
   <!--
+    创建一个Servlet过滤器，它用Spring Session支持的HttpSession实现来替换容器本身HttpSession实现。这一步也是Spring Session的核心。
+    它对HttpServletRequest 进行包装，然后重写对Session操作的接口，内部调用 SessionRepository 的实现类来对session 进行操作。这就
+    Spring Session 如何控制 session的了，最后进行总结一下：
+
+    当我们配置 DelegatingFilterProxy 时，会配置 filter-name:springSessionRepositoryFilter，当我们配置 RedisHttpSessionConfiguration
+    这个bean时，这个Filter 则由Spring 生成，而它实际就是 SessionRepositoryFilter。当有请求到达时，DelegatingFilterProxy 委托给
+    SessionRepositoryFilter，而它又将 HttpServletRequest,HttpServletResponse 进行一定的包装，重写对session操作的接口，然后将包
+    装好的 request,response 传递到后续的Filter中，完成了对Session的拦截操作，后续应用操作的 Session 都是 Spring Session 包装后的
+    Session。
+  -->
+  <filter>
+    <filter-name>springSessionRepositoryFilter</filter-name>
+    <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>springSessionRepositoryFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+    <dispatcher>REQUEST</dispatcher>
+    <dispatcher>ERROR</dispatcher>
+  </filter-mapping>
+
+  <!--
     定义 spring 的 shiro 过滤器：
-    DelegatingFilterProxy 实际上是 Filter 的一个代理对象. 默认情况下, Spring 会到 IOC 容器中查找和	<filter-name> 对应
-    的 filter bean. 也可以通过 targetBeanName 的初始化参数来配置 filter bean 的 id.
+    DelegatingFilterProxy 实际就是 Filter 的一个代理对象。用这个类的好处主要是通过 Spring容器来管理 servlet filter的生命周期，
+    还有就是如果 filter中需要一些 Spring容器的实例，可以通过 spring直接注入。另外读取一些配置文件这些便利的操作都可以通过 Spring
+    来配置实现。
+
+    targetFilterLifecycle 使 filter 的生命周期交给 spring 管理，即与 spring 的生命周期同步。默认情况下 Spring 会到 IOC容器中
+    查找和 <filter-name> 对应的 filter bean。也可以通过 targetBeanName 的初始化参数来配置 filter bean 的 id。
   -->
   <filter>
     <filter-name>shiroFilter</filter-name>
     <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+    <async-supported>true</async-supported>
     <init-param>
       <!-- 该值默认为 false，表示生命周期由 SpringApplicationContext 管理，设为 true 表示由 ServletContainer 管理 -->
       <param-name>targetFilterLifecycle</param-name>
