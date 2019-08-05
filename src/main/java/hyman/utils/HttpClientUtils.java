@@ -251,4 +251,44 @@ public class HttpClientUtils {
     private static String getResult(HttpRequestBase request) {
         return getResult(request, new BasicResponseHandler());
     }
+
+    public static String formatUrl(String prefixUrl,String url){
+
+        String h="";
+        String t="";
+        // https开头
+        if(url.indexOf("https://") >= 0){
+            // 包含www
+            if (url.indexOf("https://www.") >= 0) {
+                h = url.substring(0,12);
+                t = url.substring(12,url.length());
+            }else{
+                // 不包含www
+                h = url.substring(0,8);
+                t = url.substring(8,url.length());
+            }
+        }else if(url.indexOf("http://") >= 0){
+            // 已http开头
+            // 包含www
+            if (url.indexOf("http://www.") >= 0) {
+                h = url.substring(0,11);
+                t = url.substring(11,url.length());
+            }else{
+                // 不包含www
+                h = url.substring(0,7);
+                t = url.substring(7,url.length());
+            }
+        }else{
+            // 包含www
+            if (url.indexOf("www.") >= 0) {
+                h = url.substring(0,4);
+                t = url.substring(4,url.length());
+            }else{
+                // 不包含www
+                h = "";
+                t = url;
+            }
+        }
+        return (StringUtils.isBlank(h)?"http://":h)+prefixUrl+"."+t;
+    }
 }

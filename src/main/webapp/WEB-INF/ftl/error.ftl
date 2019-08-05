@@ -13,5 +13,145 @@
 <h3>${requestScope.id} , ${requestScope.name} ， requestScope.name 等价于 request.getAttribute("name")，一般是从服务器段传过来的,可以传到客户端也可以传到服务器里面(即,方法1传到方法2,服务器内部的传输)</h3>
 
 <h3>${error}</h3>
+
+
+<#-- 宏变量使用例子 -->
+<#macro list title items>
+  <p>${title?cap_first}:
+  <ul>
+    <#list items as x>
+      <li>${x?cap_first}
+	</#list>
+  </ul>
+</#macro>
+<@list items=["mouse", "elephant", "python"] title="Animals"/>
+
+
+<#assign index = 0>
+<#macro buildNode childs>
+	<#assign index = index+1>
+
+	<#-- list?size>0 等同于 size gt 0 -->
+	<#if childs?? && childs?size gt 0>
+
+		<#list childs as l>
+			<div class="clear"> ${(l.itemName)!} </div>
+		        <div class="clear"></div>
+
+			<#-- 循环子节点 -->
+			<#if l.items?? && l.items?size gt 0>
+				<@buildNode childs=l.items />
+			</#if>
+		</#list>
+	</#if>
+	<div class="clear"> ${index} </div>
+</#macro>
+<@buildNode childs = list />
+
+
+<script type="text/javascript">
+
+	<#assign data=['a','b','c','d'] />
+	<#if (data?size>0)>
+		console.log('${data?size}');
+	</#if>
+	<#if data?size gt 0>
+		console.log('${data?size}');
+	</#if>
+
+	// freemarker 的 if 标签也可以声明在 js 代码中：
+	<#if is?? && is==1> function(){	<#if is?? && is==1></#if>	} </#if>
+
+	<#list 0..size as i >
+		// 当 size 为 n 时，则输出从 0 到 n。注意这种类型只适用于数字。
+		console.log(${i});
+	</#list>
+
+	<#assign ars=["a","b","c","d"] />
+		<#list ars as ar >
+			console.log('${ar}');
+		</#list>
+
+	<#assign info={"name":"张三","address":"上海"} />
+	console.log('${info.name}');
+
+	<#assign text="{'name':'opal','age':'30+','addr':'上海上海'}" />
+	// 解析 json
+	<#assign data=text?eval />
+	console.log('${data.name}');
+
+</script>
+
 </body>
 </html>
+
+<#--
+1，============================================
+创建一个宏变量，宏命名空间（宏变量存储模板片段(称为宏定义体)，可以被用作自定义指令）：
+<#macro name param1 param2 ... paramN>
+  ...
+  <#nested loopvar1, loopvar2, ..., loopvarN>
+  ...
+  <#return>
+  ...
+</#macro>
+
+name：是宏变量的名称，它不是表达式。和 顶层变量 的语法相同。
+
+param1，param2 等等：是局部变量的名称，用于存储参数的值 (不是表达式)。局部变量和默认值(是表达式)是可选的。 默认值也可以是另外
+		一个参数，比如 <#macro section title label=title>。
+
+paramN：是最后一个参数，可能会有三个点(...)，这就意味着宏接受可变数量的参数，不匹配其它参数的参数可以作为最后一个参数 (也被称
+		作笼统参数)。当宏被命名参数调用时，paramN 将会是包含宏的所有未声明的键/值对的哈希表。当宏被位置参数调用，paramN 将是额外参数的序列。(在宏内部，要查找参数，可以使用  myCatchAllParam?is_sequence。)
+
+loopvar1，loopvar2 等等：是可选的，是循环变量的值，是由 nested 指令为嵌套内容创建的。这些都是表达式。
+
+return 和 nested 指令是可选的，而且可以在 <#macro ...> 和 </#macro> 之间被用在任意位置和任意次数。
+
+没有默认值的参数必须在有默认值参数 (paramName=defaultValue) 之前。并且给宏的局部变量赋值，要放在最后。
+
+2，=======================================
+freemarker 默认是从 session 中优先取值，所以有时会导致后台传过来的数据没有获取。故要将变量名 user 修改成其他的即可解决这个问题。
+之后要注意，session与正常的后台传值到前台要注意变量名不要一致。
+
+3，=======================================
+
+freemarker 实现国际化信息显示，是使用自定义指令 <@spring> 实现，并且该自定义的指令文件是 springmvc 提供的文件，所以直接使用即可。
+
+1.首先定义2个国际化配置文件
+messages_zh_CN.properties：
+username=用户名
+title=欢迎来到{0},{1}!
+
+messages_en_US.properties：
+username=UserName
+title=welcome to {0},{1}!
+
+2. 编辑前端 ftl 模板：
+<!--一定要导入spring.ftl-->
+<#import "spring.ftl" as spring>
+
+<body>
+<!--或者<@spring.message code="username" />-->
+<@spring.message "username" />
+
+<!-- arg是一个在 freemarker 中定义的数组,包含了占位符{0},{1}对应的参数 -->
+<#assign arg = ["我的首页","张三"]>
+<@spring.messageArgs "title" arg />
+</body>
+
+需要注意的点：
+1)一定要引入spring.ftl
+2)<@spring.messageArgs "xxx" arg /> ，第二个参数是一个freemarker数组，需要先用<#assign>指令定义好，spring.ftl还定义了其他的宏，大家照葫芦画瓢，也就会用了。
+
+
+
+
+
+
+
+
+
+
+
+-->
