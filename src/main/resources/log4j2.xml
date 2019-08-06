@@ -6,60 +6,94 @@
 
     <!-- 配置日志文件输出目录 -->
     <!--<Properties>-->
-        <!--<Property name="LOG_HOME">D:/logs</Property>-->
+    <!--<Property name="LOG_HOME">D:/logs</Property>-->
     <!--</Properties>-->
 
     <Appenders>
+
+        <!--
+        数据库 JDBCAppender 是把错误日志信息根据配置存储到数据库中。它配置了 Connection 工厂类以及获取 Connection 的方法。
+        该 Connection 是 JDBC 连接数据库的 java.sql.Connection。
+
+        tableName 是数据库中的表名;
+        ConnectionFactory 需要自定义数据库连接工厂类，并提供获取 DataSource 或者 Connection 的静态方法。
+        Column的name 属性是指定数据库表中的字段名，pattern是匹配日志的内容格式，会将对应的内容写入到指定的字段下。
+
+        两种格式如下：
+         -->
+        <JDBC name="databaseAppender" tableName="user_sys_log">
+            <ConnectionFactory class="com.cme.platform.base.Log4j2ConnectionFactory" method="getDatabaseConnection"/>
+            <!-- <Column name="id" literal="LOGGING.APPLICATION_LOG_SEQUENCE.NEXTVAL" /> -->
+            <Column name="create_time" isEventTimestamp="true"/>
+            <Column name="level" pattern="%level"/>
+            <Column name="message" pattern="%message"/>
+            <Column name="clazz" pattern="%class"/>
+            <Column name="user_id" pattern="%X{user_id}"/>
+            <Column name="pf_id" pattern="%X{pf_id}"/>
+        </JDBC>
+
         <!--这个输出控制台的配置 -->
         <Console name="Console" target="SYSTEM_OUT">
-            <!-- 控制台只输出level及以上级别的信息(onMatch),其他的直接拒绝(onMismatch) -->
-            <ThresholdFilter level="debug" onMatch="ACCEPT"
-                             onMismatch="DENY" />
+            <!-- 控制台只输出 level 及以上级别的信息（onMatch），其他的直接拒绝（onMismatch） -->
+            <ThresholdFilter level="debug" onMatch="ACCEPT" onMismatch="DENY"/>
             <!-- 输出日志的格式 -->
-            <PatternLayout
-                    pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %class{36} %L %M - %msg%xEx%n" />
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %class{36} %L %M - %msg%xEx%n"/>
         </Console>
 
-        <!-- 设置日志格式并配置日志压缩格式(service.log.年份.gz) -->
-        <!-- %d{yyyy-MM-dd HH:mm:ss, SSS} : 日志生产时间 %p : 日志输出格式 %c : logger的名称
-                %m : 日志内容，即 logger.info("message") %n : 换行符 %C : Java类名 %L : 日志输出所在行数 %M
-                : 日志输出所在方法名 hostName : 本地机器名 hostAddress : 本地ip地址 -->
-        <!--<RollingRandomAccessFile name="service_appender"-->
-                                 <!--immediateFlush="true" fileName="${LOG_HOME}/service.log"-->
-                                 <!--filePattern="${LOG_HOME}/service.log.%d{yyyy-MM-dd}.log.gz">-->
-            <!--<PatternLayout>-->
-                <!--<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %class{36} %L %M &#45;&#45;-->
-                    <!--%msg%xEx%n</pattern>-->
-            <!--</PatternLayout>-->
-            <!--<Policies>-->
-                <!--<TimeBasedTriggeringPolicy interval="1"-->
-                                           <!--modulate="true" />-->
-            <!--</Policies>-->
-        <!--</RollingRandomAccessFile>-->
+        <!--
+            设置日志格式并配置日志压缩格式（service.log.年份.gz）:
+
+            %d{yyyy-MM-dd HH:mm:ss, SSS} : 日志生产时间，
+            %p : 日志输出格式，
+            %c : logger的名称，
+            %m : 日志内容，即 logger.info("message")，
+            %n : 换行符，
+            %C : Java类名，
+            %L : 日志输出所在行数，
+            %M : 日志输出所在方法名，
+            hostName : 本地机器名，
+            hostAddress : 本地ip地址
+        -->
+        <RollingRandomAccessFile name="service_appender" immediateFlush="true" fileName="${LOG_HOME}/service.log"
+                                 filePattern="${LOG_HOME}/service.log.%d{yyyy-MM-dd}.log.gz">
+
+            <PatternLayout>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %class{36} %L %M --- %msg%xEx%n</pattern>
+            </PatternLayout>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+        </RollingRandomAccessFile>
+
     </Appenders>
 
     <Loggers>
         <!-- 配置日志的根节点 -->
         <root level="TRACE">
-            <AppenderRef ref="Console" level="DEBUG" />
+            <AppenderRef ref="Console" level="DEBUG"/>
         </root>
-        <!-- <Root level="error">
+
+        <!--
+        <Root level="error">
             <AppenderRef ref="Console" />
             <AppenderRef ref="databaseAppender" />
-        </Root> -->
+        </Root>
+        -->
 
         <!-- 第三方日志系统 -->
-        <logger name="org.springframework.core" level="info" />
-        <logger name="org.springframework.beans" level="info" />
-        <logger name="org.springframework.context" level="info" />
-        <logger name="org.springframework.web" level="info" />
-        <logger name="org.springframework.scheduling" level="info" />
+        <logger name="org.springframework.core" level="info"/>
+        <logger name="org.springframework.beans" level="info"/>
+        <logger name="org.springframework.context" level="info"/>
+        <logger name="org.springframework.web" level="info"/>
+        <logger name="org.springframework.scheduling" level="info"/>
 
-        <!-- 日志实例(info),其中'service-log'继承root,但是root将日志输出控制台,而'service-log'将日志输出到文件,通过属性'additivity="false"'将'service-log'的
-            的日志不再输出到控制台 -->
+        <!--
+            日志实例（info），其中 service-log 继承 root，但是 root将日志输出控制台。而 service-log 将日志输出到文件，通过属性
+            additivity="false" 将 'service-log' 的日志不再输出到控制台。
+        -->
         <!--<logger name="hyman.controller" level="INFO" includeLocation="true"-->
-                <!--additivity="true">-->
-            <!--<appender-ref ref="service_appender" />-->
+        <!--additivity="true">-->
+        <!--<appender-ref ref="service_appender" />-->
         <!--</logger>-->
     </Loggers>
 </Configuration>

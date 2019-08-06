@@ -89,7 +89,7 @@
     <root>
         <level value="DEBUG" />
         <appender-ref ref="inLine" />
-        <!-- 		<appender-ref ref="FILE" /> -->
-        <!-- 		<appender-ref ref="framework" /> -->
+        <!-- <appender-ref ref="FILE" /> -->
+        <!-- <appender-ref ref="framework" /> -->
     </root>
 </log4j:configuration>

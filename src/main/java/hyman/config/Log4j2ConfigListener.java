@@ -5,9 +5,10 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import java.util.Enumeration;
 
+// 类描述：此类定制log4j2.xml的文件路径及文件名称
 public class Log4j2ConfigListener implements ServletContextListener {
 
-    private static final String KEY = "log4j2.xml";
+    private static final String KEY = "log4j2.configurationFile";
 
     @Override
     public void contextDestroyed(ServletContextEvent arg0) {
@@ -20,6 +21,7 @@ public class Log4j2ConfigListener implements ServletContextListener {
     }
 
     private String getContextParam(ServletContextEvent event) {
+
         Enumeration<String> names = event.getServletContext().getInitParameterNames();
         while (names.hasMoreElements()) {
             String name = names.nextElement();

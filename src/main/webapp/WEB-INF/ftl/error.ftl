@@ -86,6 +86,7 @@
 </html>
 
 <#--
+
 1，============================================
 创建一个宏变量，宏命名空间（宏变量存储模板片段(称为宏定义体)，可以被用作自定义指令）：
 <#macro name param1 param2 ... paramN>
@@ -110,42 +111,19 @@ return 和 nested 指令是可选的，而且可以在 <#macro ...> 和 </#macro
 
 没有默认值的参数必须在有默认值参数 (paramName=defaultValue) 之前。并且给宏的局部变量赋值，要放在最后。
 
+
 2，=======================================
 freemarker 默认是从 session 中优先取值，所以有时会导致后台传过来的数据没有获取。故要将变量名 user 修改成其他的即可解决这个问题。
 之后要注意，session与正常的后台传值到前台要注意变量名不要一致。
 
+
 3，=======================================
 
-freemarker 实现国际化信息显示，是使用自定义指令 <@spring> 实现，并且该自定义的指令文件是 springmvc 提供的文件，所以直接使用即可。
+4，=======================================
+freemarker 中 seq_contains 和 contains：
 
-1.首先定义2个国际化配置文件
-messages_zh_CN.properties：
-username=用户名
-title=欢迎来到{0},{1}!
-
-messages_en_US.properties：
-username=UserName
-title=welcome to {0},{1}!
-
-2. 编辑前端 ftl 模板：
-<!--一定要导入spring.ftl-->
-<#import "spring.ftl" as spring>
-
-<body>
-<!--或者<@spring.message code="username" />-->
-<@spring.message "username" />
-
-<!-- arg是一个在 freemarker 中定义的数组,包含了占位符{0},{1}对应的参数 -->
-<#assign arg = ["我的首页","张三"]>
-<@spring.messageArgs "title" arg />
-</body>
-
-需要注意的点：
-1)一定要引入spring.ftl
-2)<@spring.messageArgs "xxx" arg /> ，第二个参数是一个freemarker数组，需要先用<#assign>指令定义好，spring.ftl还定义了其他的宏，大家照葫芦画瓢，也就会用了。
-
-
-
+contains，是字符串string 上的方法，作用于字符串上，主要用来查找字符串或者字符是否存在于左侧字符串里，返回值为true或者false。
+seq_contains，用于查找序列中（集合或是数组中）是否包含指定元素。
 
 
 

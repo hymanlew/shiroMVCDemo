@@ -69,7 +69,7 @@ public class LogAop {
 
 
     /**
-     * 声明AOP切入点，凡是使用了XXXOperateLog的方法均被拦截
+     * 声明AOP切入点，凡是使用了 LogAnnotation 注解的方法均被拦截
      */
     @Pointcut("@annotation(hyman.aop.LogAnnotation)")
     public void log() {
@@ -77,22 +77,21 @@ public class LogAop {
     }
 
     /**
-     * 在所有标注@Log的地方切入
+     * 在所有标注 @LogAnnotation 的地方切入
      * @param joinPoint
      */
     @Before("log()")
     public void beforeExec(JoinPoint joinPoint) {
-        executeTime.set(System.currentTimeMillis());
+        executeTime.set("调用注解方法开始 == " + System.currentTimeMillis());
     }
 
     /**
      * AfterReturning 增强处理将在目标方法正常完成后被织入
      * @param joinPoint
      * @throws SecurityException
-     * @throws NoSuchMethodException
      */
     @After("@annotation(hyman.aop.LogAnnotation)")
-    public void afterExec(JoinPoint joinPoint) throws NoSuchMethodException, SecurityException {
+    public void afterExec(JoinPoint joinPoint) throws SecurityException {
         executeTime.set("调用注解方法结束 == " + System.currentTimeMillis());
     }
 
@@ -106,14 +105,14 @@ public class LogAop {
     @SuppressWarnings("rawtypes")
     public Object doWriteLog(ProceedingJoinPoint pjp) throws Throwable {
 
+        Object obj = null;
+
         if (isOpenDataMonitor.equals("true")) {
             //获取request
             HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
 
             //获取操作平台id
             String optPfId= request.getSession().getAttribute("type_id") == null ? "未知" : request.getSession().getAttribute("type_id").toString();
-
-            Object obj = null;
 
             // 拦截的实体类
             Object target = pjp.getTarget();
@@ -146,10 +145,9 @@ public class LogAop {
                     //获取自定义注解实体
                     LogAnnotation systemLog = method.getAnnotation(LogAnnotation.class);
 
-                    //日志类实体类
-
                     //循环获得所有参数对象
                     for(int i=0; i<args.length; i++){
+
                         if (null != args[i]) {
                             paramMaps.put(parameNames[i].toString(), args[i]);
                         }else {
@@ -157,14 +155,17 @@ public class LogAop {
                         }
                     }
 
+                    //日志类实体类
                     //设置方法参数及参数值
                     try {
                         // 执行该方法
                         obj = pjp.proceed();
                         //设置方法执行状态
+                        executeState.set(1);
 
                     } catch (Exception e) {
                         //设置方法执行状态
+                        executeState.set(0);
 
                     }finally {
                         //设置方法结束时间
@@ -172,8 +173,9 @@ public class LogAop {
 
                     //设置方法执行花费的时间
                     //发送到消息队列
-//    				amqpTemplate.convertAndSend(RabbitMqConstant.LOG_EXCHANGE,RabbitMqConstant.ADD_LOG_ROUTING_KEY,cmsLog);
-//    				jmsTemplate.convertAndSend(new ActiveMQTopic(ActiveMqConstant.TOPIC_ADD_LOG), JSON.toJSONString(cmsLog));
+                    //amqpTemplate.convertAndSend(RabbitMqConstant.LOG_EXCHANGE,RabbitMqConstant.ADD_LOG_ROUTING_KEY,cmsLog);
+                    //jmsTemplate.convertAndSend(new ActiveMQTopic(ActiveMqConstant.TOPIC_ADD_LOG), JSON.toJSONString(cmsLog));
+
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
@@ -188,8 +190,7 @@ public class LogAop {
                     }).run();
                 }
             }
-            return obj;
         }
-        return pjp.proceed();
+        return obj;
     }
 }

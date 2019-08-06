@@ -10,6 +10,16 @@
     <param-value>classpath:spring/*.xml</param-value>
   </context-param>
 
+  <context-param>
+    <description>日志配置文件的路径</description>
+    <param-name>log4j2.configurationFile</param-name>
+    <param-value>log4j2.xml</param-value>
+  </context-param>
+
+  <listener>
+    <listener-class>hyman.config.Log4j2ConfigListener</listener-class>
+  </listener>
+
   <!-- spring 监听器 -->
   <listener>
     <description>springLis</description>
