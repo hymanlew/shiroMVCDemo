@@ -224,8 +224,10 @@
         <dependency>
             <groupId>org.springframework.data</groupId>
             <artifactId>spring-data-redis</artifactId>
-            <!--<version>1.8.4.RELEASE</version>-->
-            <version>2.1.2.RELEASE</version>
+            <!-- 只适用于 spring4 -->
+            <version>1.8.4.RELEASE</version>
+            <!-- 只适用于 spring5 -->
+            <!--<version>2.1.6.RELEASE</version>-->
         </dependency>
 
         <!-- jstl 标签库 -->

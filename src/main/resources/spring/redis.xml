@@ -10,18 +10,36 @@
 
     <cache:annotation-driven />
 
+    <bean id="jedisConnFactory"
+          class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory" destroy-method="destroy">
+        <property name="hostName" value="${jedis.host}"/>
+        <property name="password" value="${jedis.password}" />
+        <property name="port" value="${jedis.port}"/>
+        <property name="timeout" value="${jedis.poolTimeout}"/>
+        <property name="usePool" value="true"/>
+        <property name="poolConfig" ref="jedisPoolConfig"/>
+    </bean>
+
+    <!-- 需要注意的是 JedisPool 默认就是 this((String)"localhost", 6379) -->
+    <bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+        <property name="maxTotal" value="${jedis.MaxTotal}" />
+        <property name="maxIdle" value="${jedis.MaxIdle}" />
+    </bean>
+
+
+    <!--
+    只适用于 spring 5
     <bean id="standlongConfig" class="org.springframework.data.redis.connection.RedisStandaloneConfiguration">
         <property name="port" value="${jedis.port}" />
         <property name="hostName" value="${jedis.host}" />
         <property name="password" value="${jedis.password}" />
         <property name="database" value="0" />
     </bean>
-
     <bean id="jedisConnFactory"
         class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory" destroy-method="destroy">
         <constructor-arg name="standaloneConfig" ref="standlongConfig" />
     </bean>
-
+    -->
 
     <!-- redis template definition -->
     <!--&lt;!&ndash; <bean id="redisTemplate" class="org.springframework.data.redis.core.RedisTemplate"-->
