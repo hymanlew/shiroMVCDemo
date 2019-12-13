@@ -10,19 +10,16 @@
 
     <cache:annotation-driven />
 
+    <bean id="standlongConfig" class="org.springframework.data.redis.connection.RedisStandaloneConfiguration">
+        <property name="port" value="${jedis.port}" />
+        <property name="hostName" value="${jedis.host}" />
+        <property name="password" value="${jedis.password}" />
+        <property name="database" value="0" />
+    </bean>
+
     <bean id="jedisConnFactory"
         class="org.springframework.data.redis.connection.jedis.JedisConnectionFactory" destroy-method="destroy">
-        <property name="hostName" value="${jedis.host}"/>
-        <property name="password" value="${jedis.password}" />
-        <property name="port" value="${jedis.port}"/>
-        <property name="timeout" value="${jedis.poolTimeout}"/>
-        <property name="usePool" value="true"/>
-        <property name="poolConfig" ref="jedisPoolConfig"/>
-    </bean>
-    <!-- 在 springboot 中此方法只能用于本地使用（即 localhost），因为其 JedisPool 默认就是 this((String)"localhost", 6379) -->
-    <bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
-        <property name="maxTotal" value="${jedis.MaxTotal}" />
-        <property name="maxIdle" value="${jedis.MaxIdle}" />
+        <constructor-arg name="standaloneConfig" ref="standlongConfig" />
     </bean>
 
 
@@ -70,10 +67,9 @@
     否则会抛出org.springframework.beans.factory.NoSuchBeanDefinitionException: No bean named ‘springSessionRepositoryFilter
      is defined异常。配置的Filter是一个代理对象，他需要一个真正的对象来完成Session管理，真正对象就抛出异常里没有找到的异常。
 
-     默认情况下去Spring容器里找该真正工作Bean，所以务必要在Spring容器里配出该Bean。
+     默认情况下去Spring容器里找该真正工作Bean，所以务必要在Spring容器里配出该Bean（spring-mvc-base.xml）。
 
     直接 request.getsession.setattr(getattr) 即可，其实现就是直接操作 redis。
-    需要测试，看看配置在 mvc 配置文件中，能否正常使用。
     -->
     <!--redis与session    -->
     <!--<bean id="redisHttpSessionConfiguration"-->
