@@ -158,6 +158,11 @@
             <mvc:mapping path="/**" />
             <bean class="hyman.interceptor.ApiInterceptor" />
         </mvc:interceptor>
+        <!-- JWT token 拦截器 -->
+        <mvc:interceptor>
+            <mvc:mapping path="/login/**" />
+            <bean class="hyman.interceptor.ValidateLoginInterceptor" />
+        </mvc:interceptor>
     </mvc:interceptors>
 
 
