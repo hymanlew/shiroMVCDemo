@@ -6,7 +6,7 @@ import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
 import org.apache.shiro.codec.Hex;
 
-// 混合密码验证，该类主要是为了处理OAUTH登录时，密码验证问题
+// 混合密码验证，该类主要是为了处理 OAUTH 登录时，密码验证问题
 public class MixHashedCredentialsMatcher extends HashedCredentialsMatcher {
 
     /**

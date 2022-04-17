@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by WeiJinTechnology on 2017/2/21.
+ * Created by on 2017/2/21.
  */
 public class HttpUtil {
 
